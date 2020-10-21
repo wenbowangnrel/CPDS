@@ -8,6 +8,11 @@
 # conda install -c gmlc-tdc helics
 # pip install OpenDSSDirect.py
 
+"""
+This should be setup.py in the future
+"""
+
+
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
@@ -19,6 +24,7 @@ if __name__ == '__main__':
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
 #helics.helicsGetVersion()
+
 
 
 
