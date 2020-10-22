@@ -12,6 +12,11 @@ pip install OpenDSSDirect.py
 git clone https://github.com/NREL/PyDSS.git
 pip install -e .
 ```
+### install andes
+```
+conda install andes
+```
+
 ### install helics-cli
 (for windows)
 ```
