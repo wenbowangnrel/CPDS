@@ -9,14 +9,14 @@ import sys
 import numpy
 import helics as h
 import opendssdirect as odd
-#NEW
+import csv
 import pandas
 
 PUBLICATIONS = {}
 SUBSCRIPTIONS = {}
 
-sys.path.append(os.getcwd().split('Distribution')[0]+'PyDSS')
-sys.path.append(os.getcwd().split('Distribution')[0]+'PyDSS/PyDSS')
+# sys.path.append(os.getcwd().split('Distribution')[0]+'PyDSS')
+# sys.path.append(os.getcwd().split('Distribution')[0]+'PyDSS/PyDSS')
 
 def countList(lst1, lst2): 
     return [sub[item] for item in range(len(lst2)) 
@@ -109,11 +109,11 @@ def main(filename,pydss_path,sim_path,sim_file):
     step_time = data["step_time"]
     subscriptions = data["subscriptions"]
     publications = data["publications"]
-    dir_multi=data["direction_multiplier"]
-    ami_nodes=data['AMI_nodes']
-    g2020_nodes=data['Grid2020_nodes']
+    # dir_multi=data["direction_multiplier"]
+    # ami_nodes=data['AMI_nodes']
+    # g2020_nodes=data['Grid2020_nodes']
 
-    # odd.run_command(f"Redirect {filename}")
+    odd.run_command(f"Redirect {filename}")
 
     file_tmp=open(os.getcwd()+'/DSSfiles/Master.dss','rt')
     contents=file_tmp.read()
@@ -179,20 +179,20 @@ def main(filename,pydss_path,sim_path,sim_file):
     currenttime = 0.0
     x = {}  # can I do nothing?
     #NEW
-    for i,n in enumerate(load_names_master):
-        x['Load.'+n]={}
-        x['Load.'+n]['kW']=df[load_col_names[i]][int(currenttime/4)]*float(load_kW_peak[i])
-        x['Load.'+n]['kvar']=df[load_col_names[i]][int(currenttime/4)]*float(load_kvar_peak[i])
+    # for i,n in enumerate(load_names_master):
+    #     x['Load.'+n]={}
+    #     x['Load.'+n]['kW']=df[load_col_names[i]][int(currenttime/4)]*float(load_kW_peak[i])
+    #     x['Load.'+n]['kvar']=df[load_col_names[i]][int(currenttime/4)]*float(load_kvar_peak[i])
 
     # pydss_path='/Users/ikrad/Documents/GitHub/PyDSS'  
     # sim_path='/Users/ikrad/Desktop/reduced-heco-ikrad-pydss2/HECO_Reduced_Model/Distribution/KAHE1_1pydss/PyDSS Scenarios'
     # sim_file='igms_test.toml'
-    sys.path.append(pydss_path)
-    sys.path.append(os.path.join(pydss_path, 'PyDSS'))
-    from pyDSS import instance as dssInstance
-    a = dssInstance()
-    sim_args = a.update_scenario_settigs(os.path.join(sim_path, sim_file))
-    dssInstance = a.create_dss_instance(sim_args)
+    # sys.path.append(pydss_path)
+    # sys.path.append(os.path.join(pydss_path, 'PyDSS'))
+    # from pyDSS import instance as dssInstance
+    # a = dssInstance()
+    # sim_args = a.update_scenario_settigs(os.path.join(sim_path, sim_file))
+    # dssInstance = a.create_dss_instance(sim_args)
 
     for request_time in range(0, total_time, step_time):
 
@@ -264,61 +264,12 @@ def main(filename,pydss_path,sim_path,sim_file):
         # print(x)
 
         # Send data to controller stack
-        if len(ami_nodes) > 0:
-            NodeNames=results['Circuit.network_'+federate_name]['YNodeOrder']['A']['value']
-            V=results['Circuit.network_'+federate_name]['YNodeVArray']['A']['value']
-            I=results['Circuit.network_'+federate_name]['YCurrents']['A']['value']
-            for n in range(0,len(ami_nodes)):
-                idx=NodeNames.index(ami_nodes[n].upper())
-                busV=V[idx*2:idx*2+2]
-                busV=busV[0]+1j*busV[1]
-                busI=I[idx*2:idx*2+2]
-                busI=busI[0]+1j*busI[1]
-                busS=busV*numpy.conj(busI)
-                busP=numpy.real(busS)
-                busQ=numpy.imag(busS)
-                busVmag=numpy.abs(busV)
-                control_message={}
-                control_message[ami_nodes[n]]={}
-                control_message[ami_nodes[n]]['data_type']='AMI'
-                control_message[ami_nodes[n]]['DSS_idx']=idx
-                control_message[ami_nodes[n]]['V']=busVmag
-                control_message[ami_nodes[n]]['P']=busP
-                control_message_str=json.dumps(control_message)
-                # h.helicsEndpointSendMessageRaw(epid, "GoSolarStack_"+federate_name+"_endpoint", f"Sending {busVmag} kV and {busP} kW for node {ami_nodes[n]} at time {currenttime}")
-                h.helicsEndpointSendMessageRaw(epid, "GoSolarStack_"+federate_name+"_endpoint",control_message_str)
-                # print(f'sending message to endpoint at {currenttime}',flush=True)
-        if len(g2020_nodes) > 0:
-            NodeNames=results['Circuit.network_'+federate_name]['YNodeOrder']['A']['value']
-            V=results['Circuit.network_'+federate_name]['YNodeVArray']['A']['value']
-            I=results['Circuit.network_'+federate_name]['YCurrents']['A']['value']
-            for m in range(0,len(g2020_nodes)):
-                idx=NodeNames.index(g2020_nodes[m].upper())
-                busV=V[idx*2:idx*2+2]
-                busV=busV[0]+1j*busV[1]
-                busI=I[idx*2:idx*2+2]
-                busI=busI[0]+1j*busI[1]
-                busS=busV*numpy.conj(busI)
-                busP=numpy.real(busS)
-                busQ=numpy.imag(busS)
-                busVmag=numpy.abs(busV)
-                control_message={}
-                control_message[g2020_nodes[m]]={}
-                control_message[g2020_nodes[m]]['data_type']='G2020'
-                control_message[g2020_nodes[m]]['DSS_idx']=idx
-                control_message[g2020_nodes[m]]['V']=busVmag
-                control_message[g2020_nodes[m]]['P']=busP
-                control_message[g2020_nodes[m]]['Q']=busQ
-                control_message_str=json.dumps(control_message)
-                # h.helicsEndpointSendMessageRaw(epid, "GoSolarStack_"+federate_name+"_endpoint", f"Sending {busVmag} kV and {busP} kW for node {ami_nodes[n]} at time {currenttime}")
-                h.helicsEndpointSendMessageRaw(epid, "GoSolarStack_"+federate_name+"_endpoint",control_message_str)
-                # print(f'sending message to endpoint at {currenttime}',flush=True)
 
-        while h.helicsEndpointHasMessage(epid):
-            m = h.helicsEndpointGetMessageObject(epid)
-            message_recv = h.helicsMessageGetString(m)
-            received_data=json.loads(message_recv)
-            print(received_data,flush=True)
+        # while h.helicsEndpointHasMessage(epid):
+        #     m = h.helicsEndpointGetMessageObject(epid)
+        #     message_recv = h.helicsMessageGetString(m)
+        #     received_data=json.loads(message_recv)
+        #     print(received_data,flush=True)
 
 
     h.helicsFederateFinalize(fed)
@@ -334,9 +285,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", help="json filename that describes OpenDSS feeder")
-    parser.add_argument("pydss_path", help="path to cloned PyDSS directory")
-    parser.add_argument("sim_path", help="path to PyDSS project scenario directory")
-    parser.add_argument("sim_file", help="path to toml simulation file")
+    # parser.add_argument("pydss_path", help="path to cloned PyDSS directory")
+    # parser.add_argument("sim_path", help="path to PyDSS project scenario directory")
+    # parser.add_argument("sim_file", help="path to toml simulation file")
     args = parser.parse_args()
 
-    main(args.filename,args.pydss_path,args.sim_path,args.sim_file)
+    main(args.filename)#,args.pydss_path,args.sim_path,args.sim_file)
