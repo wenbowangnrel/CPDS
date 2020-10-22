@@ -1172,28 +1172,28 @@ for i in range(1,2):
             # get gen and load and update ACPF cases.
             # update the load
             kk=0
-            for ldi in list([2,3,5,6,8,10,12]):
+            for ldi in list([2,3,5,6,8,10,12]): # wenbo notes: update load, Sbase = 100 MVA
                 pfss.PQ.p0.v[kk] = EDins.Load_Bus[ldi,e].value/100
                 kk=kk+1
             # update the generation from geneators and PV   
             gkk=0    
-            for gi in Supply_List["DPGEN_SET"]: 
+            for gi in Supply_List["DPGEN_SET"]:
                 if gi == 'SOUTHG1': # Slack bus generator
                     pfss.Slack.p0.v =  EDins.gen_power[gi,e].value/100
                 else:
                     pfss.PV.p0.v[gkk] =  EDins.gen_power[gi,e].value/100
                     gkk=gkk+1
             # update the generation from ESS         
-            for gi in Supply_List["DPESS_SET"]:              
+            for gi in Supply_List["DPESS_SET"]:
                 pfss.PV.p0.v[gkk] =  EDins.ess_pow[gi,e].value/100
                 gkk=gkk+1    
             
-            pfss.PV.cache.refresh()
-            pfss.PQ.cache.refresh()
+            pfss.PV.cache.refresh() # wenbo notes: necessary 1
+            pfss.PQ.cache.refresh() # necessary 2
             # setup system
-            pfss.setup()
+            pfss.setup()            # necessary 3
             # run power flow
-            pfss.PFlow.run()        
+            pfss.PFlow.run()        # run step
             #record bus 2 voltage magnitude
             v1_bus2 = pd.concat([v1_bus2, pd.DataFrame(np.reshape(pfss.Bus.v.v, (1,len(pfss.Bus.v.v))),columns=[list(range(19))])], axis = 0)
             

@@ -139,7 +139,9 @@ def main(filename)# the file name is json configuration for federate #, pydss_pa
         # print('updated values command',flush=True)
         # print(x,flush=True)
         # TODO add transmission runstep function
+        pfss.PFlow.run()
         # TODO get the results variable out
+
         # TODO how to change input
 
 
