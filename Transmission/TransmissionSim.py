@@ -14,7 +14,9 @@ import numpy
 import helics as h
 import opendssdirect as odd
 #NEW
-import pandas
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 import andes
 
@@ -30,9 +32,34 @@ pfss.setup()
 # run power flow
 pfss.PFlow.run()
 
+print(pfss.PV.p0.v)
+pfss.PQ.p0.v # array of load at the load points
+
+pfss.Bus.v.v # voltage for all the buses
+
+# read load profile
+
+load_profile_df = pd.read_csv(os.getcwd() + '\\load_profile.csv', index_col=0)
+load_profile = load_profile_df.iloc[:, 0]
+
+
+# fig, ax1 = plt.subplots()
+# ax = load_profile.plot()
+
+
+
+
 PUBLICATIONS = {}
 SUBSCRIPTIONS = {}
+num_sim = 75 # 5*60/4
 
+for i in range(num_sim):
+    # change load of TransmissionSim
+
+
+
+
+'''
 
 # sys.path.append(os.getcwd().split('Distribution')[0]+'PyDSS')
 # sys.path.append(os.getcwd().split('Distribution')[0]+'PyDSS/PyDSS')
@@ -138,11 +165,22 @@ def main(filename)# the file name is json configuration for federate #, pydss_pa
         # odd.run_command(f"Solve t={currenttime}")
         # print('updated values command',flush=True)
         # print(x,flush=True)
-        # TODO add transmission runstep function
-        pfss.PFlow.run()
-        # TODO get the results variable out
-
         # TODO how to change input
+        # load index [2, 3, 5, 6, 8, 10, 12]
+        kk = 0
+        for ldi in list([2, 3, 5, 6, 8, 10, 12]):  # wenbo notes: update load, Sbase = 100 MVA
+            pfss.PQ.p0.v[kk] = EDins.Load_Bus[ldi, e].value / 100
+            kk = kk + 1
+
+        # transmission run step function
+        pfss.PV.cache.refresh()
+        pfss.PQ.cache.refresh()
+        # setup system
+        pfss.setup()
+        # run power flow
+        pfss.PFlow.run()
+
+        # TODO get the results variable out
 
 
 
@@ -378,5 +416,5 @@ def set_value(sub, value):
                 f"Warning: Unable to find CktElement {class_name}.{element_name} and unable to set value ({value}) for `{fn}`"
             )
 
-
+'''
 

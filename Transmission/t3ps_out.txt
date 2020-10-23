@@ -3,7 +3,7 @@ Copyright (C) 2015-2020 Hantao Cui
 
 ANDES comes with ABSOLUTELY NO WARRANTY
 Case file: network_model\t3ps.raw
-Report time: 10/21/2020 08:22:13 PM
+Report time: 10/22/2020 07:19:51 PM
 
 Power flow converged in 6 iterations.
 Flat-start: No
