@@ -1,17 +1,17 @@
 {
-  "broker": false,
+  "broker": True,
   "federates": [
     {
       "directory": "./Transmission/",
-      "exec": "python Transmission_simulator.py",
+      "exec": "python TransmissionSim.py",
       "host": "localhost",
-      "name": "PythonCombinationFederate"
+      "name": "TransmissionSim"
     },
     {
       "directory": "./Distribution/",
-      "exec": "python Distribution_simulator.py",
+      "exec": "python 37Bus.py",
       "host": "localhost",
-      "name": "OpendssFederate"
+      "name": "37Bus"
     }
   ],
   "name": "Example-1a-T-D-Cosimulation-HELICSRunner"
