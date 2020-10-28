@@ -11,14 +11,18 @@
       "unit": "pu",
       "vbase": 230,
       "vbase_unit": "kv",
-      "topic": "which_bus"
+      "topic": "Voltage0",
+      "value":  "Voltage",
+      "element_name": "2",
+      "element_type": "Bus"
     }},
   "step_time": 4.0,
   "subscriptions": {
     "37Bus/totalload": {
       "type": "complex",
       "required": true,
-      "topic": "totalload"
+      "topic": "totalload",
+      "value": "Powers"
     }
   },
   "uninterruptible": true

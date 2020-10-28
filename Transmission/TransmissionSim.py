@@ -59,6 +59,7 @@ ax = load_profile_scaled.plot()
 andes.main.config_logger()
 
 #pd.read_csv('')
+# pfss.as_dict() # check all dict
 
 pfss = andes.load('network_model/t3ps.raw')
 pfss.PV.cache.refresh()
@@ -71,10 +72,76 @@ pfss.PFlow.run()
 print(pfss.PV.p0.v)
 PQ_orig = pfss.PQ.p0.v # array of load at the PQ points
 
-pfss.Bus.v.v # voltage for all the buses
+allbusv = pfss.Bus.v.v # voltage for all the buses
+allbusang = pfss.Bus.a.v
+bus_idx = pfss.Bus.idx.v
+# get the load index
+loadbus_name = pfss.PQ.bus.v
+# get the load value
+loadp = pfss.PQ.p0.v
+loadq = pfss.PQ.q0.v
+loadname_p = dict(zip(loadbus_name,loadp))
+loadname_q = dict(zip(loadbus_name,loadq))
+############ put in the index ##########
+loadbus_idx = [] # this will have the same index as voltage
+for i in loadbus_name:
+    loadbus_idx.append(bus_idx.index(i))
+
+### manual define one bus for publication ###
+loadbusname_publication = 2
+# val for publication
+voltage_publication = allbusv[bus_idx.index(loadbusname_publication)]
+angle_publication = allbusang[bus_idx.index(loadbusname_publication)]
+
+
+
 
 # read load profile
 # system nominal voltage 230 v
+num_sim = 5
+v_results = []
+num_v = pfss.Bus.v.v.shape[0]
+v_results_np = np.zeros([num_sim, num_v])
+
+for i in range(num_sim):
+    print(f"Doing {i} time step: at load multiply {load_profile_scaled.iloc[i]}")
+    # change load of TransmissionSim
+    # TODO how to change input
+    # load index [2, 3, 5, 6, 8, 10, 12]
+    pfss.PQ.p0.v = PQ_orig*load_profile_scaled.iloc[i]
+
+    # n = 0
+    # for ldi in list([2, 3, 5, 6, 8, 10, 12]):  # wenbo notes: update load, Sbase = 100 MVA
+    #     pfss.PQ.p0.v[ldi] = pfss.PQ.p0.v[ldi]*load_profile_scaled.iloc[i]
+    #     n = n + 1
+
+    # transmission run step function
+    pfss.PV.cache.refresh()
+    pfss.PQ.cache.refresh()
+    # setup system
+    pfss.setup()
+    # run power flow
+    pfss.PFlow.run()
+
+    # TODO get the results variable out
+    v_all = pfss.Bus.v.v
+    v_results.append(pfss.Bus.v.v)
+    print(pfss.Bus.v.v)
+    v_results_np[i, :] = pfss.Bus.v.v
+
+v_results_df = pd.DataFrame(v_results_np)
+
+#fig, ax2 = plt.subplots()
+ax2 = v_results_df.plot()
+plt.show()
+
+
+
+
+
+
+
+
 
 ################# reading in config file ###########################################
 print("reading json")
@@ -138,54 +205,59 @@ num_sim = int(total_time/step_time)
 currenttime = 0.0
 
 
-v_results = []
-num_v = pfss.Bus.v.v.shape[0]
-v_results_np = np.zeros([num_sim, num_v])
+
 
 for request_time in range(0, total_time, step_time):
     while currenttime < request_time:
         currenttime = h.helicsFederateRequestTime(fed, request_time)
     time.sleep(0.1)
-
-    # now get the publications
-    for key, pub in PUBLICATIONS.items():
-        unit=''
-        if publications[key]['value'] == 'Powers':
+    # run one step of power flow
 
 
 
-
-
-for i in range(num_sim):
-    print(f"Doing {i} time step: at load multiply {load_profile_scaled.iloc[i]}")
-    # change load of TransmissionSim
-    # TODO how to change input
-    # load index [2, 3, 5, 6, 8, 10, 12]
-    pfss.PQ.p0.v = PQ_orig*load_profile_scaled.iloc[i]
-
-    # n = 0
-    # for ldi in list([2, 3, 5, 6, 8, 10, 12]):  # wenbo notes: update load, Sbase = 100 MVA
-    #     pfss.PQ.p0.v[ldi] = pfss.PQ.p0.v[ldi]*load_profile_scaled.iloc[i]
-    #     n = n + 1
-
-    # transmission run step function
     pfss.PV.cache.refresh()
     pfss.PQ.cache.refresh()
-    # setup system
-    pfss.setup()
-    # run power flow
+
     pfss.PFlow.run()
 
-    # TODO get the results variable out
-    v_all = pfss.Bus.v.v
-    v_results.append(pfss.Bus.v.v)
-    print(pfss.Bus.v.v)
-    v_results_np[i, :] = pfss.Bus.v.v
+    allbusv = pfss.Bus.v.v
+    allbusang = pfss.Bus.a.v
+    v_tmp = allbusv[bus_idx.index(loadbusname_publication)]
+    a_tmp = allbusang[bus_idx.index(loadbusname_publication)]
+    results = [v_tmp, a_tmp]
+    val = results
 
-v_results_df = pd.DataFrame(v_results_np)
+    x = {} # can I do nothing
+    # now get the publications
+    for key, pub in PUBLICATIONS.items():
+        unit = ''
+        if publications[key]['value'] == 'Voltage':
+            val = results
+            unit = "pu"
+    typ = "complex"
+    if typ == "complex":
+        h.helicsPublicationPublishComplex(pub, val[0], val[1])
+    else:
+        raise NotImplementedError(f"Unknown type of data {typ}")
 
-#fig, ax2 = plt.subplots()
-ax2 = v_results_df.plot()
-plt.show()
+
+    for key, sub in SUBSCRIPTIONS.items():
+        val = h.helicsInputGetComplex(sub)
+        unit = ''
+        if subscriptions[key]['value'] == 'Powers':
+            x[subscriptions[key]] = {'kw': val[0], 'kvar': val[1]}
+            unit = 'kw, kvar'
+
+    # use x change the input for power flow next step
+    
+
+
+
+# after the loop
+h.helicsFederateFinalize(fed)
+print(f"{federate_name}: Federate finalized",flush=True)
+
+h.helicsFederateFree(fed)
+h.helicsCloseLibrary()
 
 
