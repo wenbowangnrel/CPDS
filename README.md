@@ -27,3 +27,18 @@ After running setup.py cosim can be launched in cli by (note: the setup.py has n
 ```
 helics --verbose run --path runner_1a.json
 ```
+Use conda to install the HELICS Python interface and apps:
+
+Ohter methods to install helics
+conda install -c gmlc-tdc helics
+OR
+
+Use pip to install the HELICS Python interface and apps:
+
+pip install helics
+pip install helics-apps
+OR
+
+Use Spack (requires Spack develop branch or versions released after v0.14.1) on HPC systems (Linux/macOS) to install C/C++ HELICS components and apps:
+
+spack install helics
