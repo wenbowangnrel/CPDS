@@ -1,5 +1,5 @@
 {
-  "broker": True,
+  "broker": false,
   "federates": [
     {
       "directory": "./Transmission/",

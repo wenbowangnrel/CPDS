@@ -10,6 +10,7 @@ import math
 import re
 import os
 import sys
+import time
 import numpy as np
 import helics as h
 import opendssdirect as odd
@@ -19,6 +20,27 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 import andes
+
+# start a broker inside the file
+brokerinitstring = "-f 2" # 2 is the number of federates connecting
+
+# Create broker #
+print("Creating Broker")
+broker = h.helicsCreateBroker("zmq", "", brokerinitstring)
+print("Created Broker")
+
+print("Checking if Broker is connected")
+isconnected = h.helicsBrokerIsConnected(broker)
+print("Checked if Broker is connected")
+
+if isconnected == 1:
+    print("Broker created and connected")
+
+# broker.disconnect()
+
+# borker.isconnected()
+
+
 
 load_profile_df = pd.read_csv(os.getcwd() + '\\load_profile.csv', index_col=0)
 load_profile = load_profile_df.iloc[:, 0]
@@ -55,6 +77,7 @@ pfss.Bus.v.v # voltage for all the buses
 # system nominal voltage 230 v
 
 ################# reading in config file ###########################################
+print("reading json")
 filename = "TransmissionSim.json"
 with open(filename) as f:
     data = json.loads(f.read())
@@ -63,29 +86,44 @@ with open(filename) as f:
     step_time = data["step_time"]
     subscriptions = data["subscriptions"]
     publications = data["publications"]
-
+print("reading json okay!")
 PUBLICATIONS = {}
 SUBSCRIPTIONS = {}
 
 fedinfo = h.helicsCreateFederateInfo()
 
+
+
 h.helicsFederateInfoSetCoreName(fedinfo, f"{federate_name}")
 h.helicsFederateInfoSetCoreTypeFromString(fedinfo, "zmq")
-h.helicsFederateInfoSetCoreInitString(fedinfo,
-                                      f"--federates=1 --broker_address=tcp://{master_ip} --interface=tcp://{fed_ip}")
+h.helicsFederateInfoSetCoreInitString(fedinfo, "--federates=1")
 h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 1.0)
+#h.helicsFederateInfoSetLoggingLevel(fedinfo, 5)  # from loglevel in json
+
 
 fed = h.helicsCreateCombinationFederate(f"{federate_name}", fedinfo)
 print(f"{federate_name}: Combination federate created", flush=True)
 
+
+
+
+
 for k, v in publications.items():
     pub = h.helicsFederateRegisterTypePublication(fed, v["topic"], "complex", "")
+    print(pub)
     PUBLICATIONS[k] = pub
+
+print(f"pub={pub}")
 for k, v in subscriptions.items():
     sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
     SUBSCRIPTIONS[k] = sub
-
+print(f"sub={sub}")
 epid = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name + "_ep", "")
+
+
+############### Entering Execution Mode ########################
+h.helicsFederateEnterInitializingMode(fed)
+status = h.helicsFederateEnterExecutingMode(fed)
 
 h.helicsFederateEnterExecutingMode(fed)
 print(f"{federate_name}: Entering execution mode", flush=True)
@@ -93,16 +131,30 @@ print(f"{federate_name}: Entering execution mode", flush=True)
 #num_sim = 75 # 5*60/4
 #num_sim = 5
 
+num_sim = int(total_time/step_time)
 
 
 
-
-
+currenttime = 0.0
 
 
 v_results = []
 num_v = pfss.Bus.v.v.shape[0]
 v_results_np = np.zeros([num_sim, num_v])
+
+for request_time in range(0, total_time, step_time):
+    while currenttime < request_time:
+        currenttime = h.helicsFederateRequestTime(fed, request_time)
+    time.sleep(0.1)
+
+    # now get the publications
+    for key, pub in PUBLICATIONS.items():
+        unit=''
+        if publications[key]['value'] == 'Powers':
+
+
+
+
 
 for i in range(num_sim):
     print(f"Doing {i} time step: at load multiply {load_profile_scaled.iloc[i]}")
