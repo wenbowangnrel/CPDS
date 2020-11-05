@@ -25,7 +25,7 @@ pip install git+git://github.com/GMLC-TDC/helics-cli.git@python-master
 
 After running setup.py cosim can be launched in cli by (note: the setup.py has not been created to-date. All the framework has been done manually for now)
 ```
-helics --verbose run --path runner_1a.json
+helics --verbose run --path runner.json
 ```
 Use conda to install the HELICS Python interface and apps:
 
