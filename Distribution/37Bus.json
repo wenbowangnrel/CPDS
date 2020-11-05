@@ -7,7 +7,8 @@
   "filename": "/path/to/file",
   "loglevel": 5,
   "period": 1.0,
-  "total_time": 75,
+  "step_time": 4,
+  "total_time": 300,
   "publications": {
       "sourcebus/TotalPower": {
       "element_name": "sourcebus",
@@ -16,20 +17,21 @@
       "type": "complex",
       "value": "Power",
       "unit": "kva",
-      "start_index": 1,
-      "end_index": 6,
-      "fold": "cavg"
+      "fold": "sum"
     }
   },
   "step_time": 4,
-  "subscriptions": [
-    {
+  "subscriptions": {
+    "sourcebus/pu": {
+      "element_name": "sourcebus",
+      "element_type": "Bus",
+      "topic": "sourcebus/sourcebus/pu",
       "required": true,
       "key": "TransmissionSim/transmission_voltage",
       "type": "complex",
       "unit": "pu",
-      "info": "which_bus"
+      "value": "Voltage"
     }
-  ]
+  }
 
 }

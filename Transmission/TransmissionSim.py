@@ -21,8 +21,16 @@ import matplotlib.pyplot as plt
 
 import andes
 
+
+def pol2cart(rho, phi):
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return x, y
+
+helicsversion = h.helicsGetVersion()
+print("Helics version = {}".format(helicsversion))
 # start a broker inside the file
-brokerinitstring = "-f 2" # 2 is the number of federates connecting
+brokerinitstring = "-f 2 --name=mainbroker" # 2 is the number of federates connecting
 
 # Create broker #
 print("Creating Broker")
@@ -50,17 +58,13 @@ old_max = load_profile.max()
 new_max = 1
 new_min = 0.9
 load_profile_scaled = (load_profile - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
+load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
 
-
-fig, ax1 = plt.subplots()
-ax = load_profile_scaled.plot()
+# fig, ax1 = plt.subplots()
+# ax = load_profile_scaled.plot()
 
 
 andes.main.config_logger()
-
-#pd.read_csv('')
-# pfss.as_dict() # check all dict
-
 pfss = andes.load('network_model/t3ps.raw')
 pfss.PV.cache.refresh()
 pfss.PQ.cache.refresh()
@@ -72,6 +76,8 @@ pfss.PFlow.run()
 print(pfss.PV.p0.v)
 PQ_orig = pfss.PQ.p0.v # array of load at the PQ points
 
+
+
 allbusv = pfss.Bus.v.v # voltage for all the buses
 allbusang = pfss.Bus.a.v
 bus_idx = pfss.Bus.idx.v
@@ -80,8 +86,8 @@ loadbus_name = pfss.PQ.bus.v
 # get the load value
 loadp = pfss.PQ.p0.v
 loadq = pfss.PQ.q0.v
-loadname_p = dict(zip(loadbus_name,loadp))
-loadname_q = dict(zip(loadbus_name,loadq))
+loadname_p = dict(zip(loadbus_name, loadp))
+loadname_q = dict(zip(loadbus_name, loadq))
 ############ put in the index ##########
 loadbus_idx = [] # this will have the same index as voltage
 for i in loadbus_name:
@@ -93,15 +99,145 @@ loadbusname_publication = 2
 voltage_publication = allbusv[bus_idx.index(loadbusname_publication)]
 angle_publication = allbusang[bus_idx.index(loadbusname_publication)]
 
+#pd.read_csv('')
+# pfss.as_dict() # check all dict
+
+
+################# reading in config file ###########################################
+print("reading json")
+filename = "TransmissionSim.json"
+with open(filename) as f:
+    data = json.loads(f.read())
+    federate_name = data["name"]
+    total_time = data["total_time"]
+    step_time = data["step_time"]
+    subscriptions = data["subscriptions"]
+    publications = data["publications"]
+print("reading json okay!")
+PUBLICATIONS = {}
+SUBSCRIPTIONS = {}
+
+########## Create the federate info object ###############
+
+fedinfo = h.helicsCreateFederateInfo()
+
+fedinitstring = "--broker=mainbroker --federates=1"
+
+h.helicsFederateInfoSetCoreName(fedinfo, f"{federate_name}")
+h.helicsFederateInfoSetCoreTypeFromString(fedinfo, "zmq")
+h.helicsFederateInfoSetCoreInitString(fedinfo, fedinitstring)
+h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 1.0)
+#h.helicsFederateInfoSetLoggingLevel(fedinfo, 5)  # from loglevel in json
+
+# create combine/value federate
+fed = h.helicsCreateValueFederate(f"{federate_name}", fedinfo)
+print(f"{federate_name}: Combination federate created", flush=True)
+
+# register the publication
+pub = h.helicsFederateRegisterGlobalTypePublication(fed, "voltage", "complex", "")
+sub = h.helicsFederateRegisterSubscription(fed, "load", "")
+#time.sleep(10)
+print('Before')
+############### Entering Execution Mode ########################
+h.helicsFederateEnterExecutingMode(fed)
+print(f"{federate_name}: Entering execution mode", flush=True)
+print('After')
+
+
+
 
 
 
 # read load profile
 # system nominal voltage 230 v
-num_sim = 5
+num_sim = 150
 v_results = []
 num_v = pfss.Bus.v.v.shape[0]
 v_results_np = np.zeros([num_sim, num_v])
+
+# I may need to initialized P and Q.
+# P, Q =
+
+print(f"===========Start simulation==================")
+current_time = 0
+for request_time in range(0, int(total_time), int(step_time)):
+    while current_time < request_time:
+        current_time = h.helicsFederateRequestTime(fed, request_time)
+
+    print(f"request_time={request_time}")
+
+
+    pfss.PV.cache.refresh()
+    pfss.PQ.cache.refresh()
+    # run one step of power flow
+    pfss.PFlow.run()
+
+
+
+
+    P, Q = h.helicsInputGetComplex(sub)
+
+    print("Receive active power at time {}: {} ".format(request_time, P))
+    print("Receive reactive power (not use) at time {}: {} ".format(request_time, Q))
+    # change the P, Q
+
+    pfss.PQ.p0.v = PQ_orig * load_profile_scaled.iloc[int(request_time)]
+    if current_time == 0:
+        print("condition first step")
+        P = pfss.PQ.p0.v[0]
+        Q = 0
+    else:
+        pfss.PQ.p0.v[0] = P
+
+
+    allbusv = pfss.Bus.v.v
+    allbusang = pfss.Bus.a.v
+
+    voltage = allbusv[bus_idx.index(loadbusname_publication)]
+    angle = allbusang[bus_idx.index(loadbusname_publication)]
+
+    print("Sent voltage mag at time {}: {} ".format(request_time, voltage))
+    print("Sent voltage ang at time {}: {} ".format(request_time, angle))
+
+    h.helicsPublicationPublishComplex(pub, voltage, angle)
+
+    # x = {} # can I do nothing
+    # # now get the publications
+    # for key, pub in PUBLICATIONS.items():
+    #     unit = ''
+    #     if publications[key]['value'] == 'Voltage':
+    #         val = results
+    #         unit = "pu"
+    # typ = "complex"
+    # if typ == "complex":
+    #     h.helicsPublicationPublishComplex(pub, val[0], val[1])
+    # else:
+    #     raise NotImplementedError(f"Unknown type of data {typ}")
+
+
+    # for key, sub in SUBSCRIPTIONS.items():
+    #     val = h.helicsInputGetComplex(sub)
+    #     unit = ''
+    #     if subscriptions[key]['value'] == 'Powers':
+    #         x[subscriptions[key]] = {'kw': val[0], 'kvar': val[1]}
+    #         unit = 'kw, kvar'
+
+    # use x change the input for power flow next step
+
+
+
+
+# after the loop
+h.helicsFederateFinalize(fed)
+print(f"{federate_name}: Federate finalized",flush=True)
+
+h.helicsFederateFree(fed)
+h.helicsCloseLibrary()
+print("Broker disconnected")
+
+""":cvar
+#num_sim = 75 # 5*60/4
+#num_sim = 5
 
 for i in range(num_sim):
     print(f"Doing {i} time step: at load multiply {load_profile_scaled.iloc[i]}")
@@ -134,130 +270,4 @@ v_results_df = pd.DataFrame(v_results_np)
 #fig, ax2 = plt.subplots()
 ax2 = v_results_df.plot()
 plt.show()
-
-
-
-
-
-
-
-
-
-################# reading in config file ###########################################
-print("reading json")
-filename = "TransmissionSim.json"
-with open(filename) as f:
-    data = json.loads(f.read())
-    federate_name = data["name"]
-    total_time = data["total_time"]
-    step_time = data["step_time"]
-    subscriptions = data["subscriptions"]
-    publications = data["publications"]
-print("reading json okay!")
-PUBLICATIONS = {}
-SUBSCRIPTIONS = {}
-
-fedinfo = h.helicsCreateFederateInfo()
-
-
-
-h.helicsFederateInfoSetCoreName(fedinfo, f"{federate_name}")
-h.helicsFederateInfoSetCoreTypeFromString(fedinfo, "zmq")
-h.helicsFederateInfoSetCoreInitString(fedinfo, "--federates=1")
-h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 1.0)
-#h.helicsFederateInfoSetLoggingLevel(fedinfo, 5)  # from loglevel in json
-
-
-fed = h.helicsCreateCombinationFederate(f"{federate_name}", fedinfo)
-print(f"{federate_name}: Combination federate created", flush=True)
-
-
-
-
-
-for k, v in publications.items():
-    pub = h.helicsFederateRegisterTypePublication(fed, v["topic"], "complex", "")
-    print(pub)
-    PUBLICATIONS[k] = pub
-
-print(f"pub={pub}")
-for k, v in subscriptions.items():
-    sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
-    SUBSCRIPTIONS[k] = sub
-print(f"sub={sub}")
-epid = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name + "_ep", "")
-
-
-############### Entering Execution Mode ########################
-h.helicsFederateEnterInitializingMode(fed)
-status = h.helicsFederateEnterExecutingMode(fed)
-
-h.helicsFederateEnterExecutingMode(fed)
-print(f"{federate_name}: Entering execution mode", flush=True)
-
-#num_sim = 75 # 5*60/4
-#num_sim = 5
-
-num_sim = int(total_time/step_time)
-
-
-
-currenttime = 0.0
-
-
-
-
-for request_time in range(0, total_time, step_time):
-    while currenttime < request_time:
-        currenttime = h.helicsFederateRequestTime(fed, request_time)
-    time.sleep(0.1)
-    # run one step of power flow
-
-
-
-    pfss.PV.cache.refresh()
-    pfss.PQ.cache.refresh()
-
-    pfss.PFlow.run()
-
-    allbusv = pfss.Bus.v.v
-    allbusang = pfss.Bus.a.v
-    v_tmp = allbusv[bus_idx.index(loadbusname_publication)]
-    a_tmp = allbusang[bus_idx.index(loadbusname_publication)]
-    results = [v_tmp, a_tmp]
-    val = results
-
-    x = {} # can I do nothing
-    # now get the publications
-    for key, pub in PUBLICATIONS.items():
-        unit = ''
-        if publications[key]['value'] == 'Voltage':
-            val = results
-            unit = "pu"
-    typ = "complex"
-    if typ == "complex":
-        h.helicsPublicationPublishComplex(pub, val[0], val[1])
-    else:
-        raise NotImplementedError(f"Unknown type of data {typ}")
-
-
-    for key, sub in SUBSCRIPTIONS.items():
-        val = h.helicsInputGetComplex(sub)
-        unit = ''
-        if subscriptions[key]['value'] == 'Powers':
-            x[subscriptions[key]] = {'kw': val[0], 'kvar': val[1]}
-            unit = 'kw, kvar'
-
-    # use x change the input for power flow next step
-    
-
-
-
-# after the loop
-h.helicsFederateFinalize(fed)
-print(f"{federate_name}: Federate finalized",flush=True)
-
-h.helicsFederateFree(fed)
-h.helicsCloseLibrary()
-
-
+"""

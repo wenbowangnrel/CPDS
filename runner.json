@@ -1,0 +1,18 @@
+{
+  "broker": false,
+  "federates": [
+    {
+      "directory": "./Transmission",
+      "exec": "python -u TransmissionSim.py",
+      "host": "localhost",
+      "name": "TransmissionSim"
+    },
+    {
+      "directory": "./Distribution",
+      "exec": "python -u 37Bus.py",
+      "host": "localhost",
+      "name": "37Bus"
+    }
+  ],
+  "name": " CPDS-T-D-Cosimulation-HELICSRunner"
+}
