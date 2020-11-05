@@ -42,3 +42,7 @@ OR
 Use Spack (requires Spack develop branch or versions released after v0.14.1) on HPC systems (Linux/macOS) to install C/C++ HELICS components and apps:
 
 spack install helics
+
+### Results
+
+Results are (for now) in the log files, a notebook file is created to read results.
