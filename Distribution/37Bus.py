@@ -131,8 +131,8 @@ for request_time in range(0, int(total_time), int(step_time)):
     S = dss.Circuit.TotalPower()
     P = S[0]
     Q = S[1]
-    print("Sent Active power at time {}: {} ".format(request_time, -P))
-    print("Sent Reactive power at time {}: {} ".format(request_time, -Q))
+    print("Sent Active power at time {}: {} ".format(request_time, -P/2500))
+    print("Sent Reactive power at time {}: {} ".format(request_time, -Q/2500))
 
     h.helicsPublicationPublishComplex(pub, -P/2500, -Q/2500)
 
