@@ -16,6 +16,8 @@ pip install -e .
 ```
 conda install andes
 ```
+### download the latest version of andes from GitHub repository and install from the local folder since the latest version hasn't been released. Using pip update can't include the latest code development in ANDES.
+
 
 ### install helics-cli
 (for windows)
