@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-# TODO add 13Bus test feeder simulator
+"""
+37Bus test feeder simulator
+"""
 import cmath
 import json
 import math
@@ -17,28 +19,22 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-PUBLICATIONS = {}
-SUBSCRIPTIONS = {}
-
-
 # read time series load profile data
 load_profile_df = pd.read_csv(os.getcwd() + '\\37Bus\\load_profile.csv', index_col=0)
 load_profile = load_profile_df.iloc[:, 0]
 
+# convert it to the range in [0.9, 1]
 old_min = load_profile.min()
 old_max = load_profile.max()
 new_max = 1
 new_min = 0.9
 load_profile_scaled = (load_profile - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
 load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
-# add more
-
-
 
 # fig, ax1 = plt.subplots()
 # ax1 = load_profile.plot()
 
-# test run
+# test run Opendss feeder
 feeder_name = '37Bus'
 print('------ Running the {} feeder in opendss'.format(feeder_name))
 run_command('compile ' + feeder_name + '/Master.dss')
@@ -47,6 +43,7 @@ if dss.Text.Result() == '':
 else:
     print('------ Opendss failed ----')
 
+# get load kw values
 BASEKV = dss.Vsources.BasekV()
 loadname_all=[]
 loadkw_all=[]
@@ -68,9 +65,6 @@ allnodenames = dss.Circuit.AllNodeNames()
 
 print(f"Total power base line is {dss.Circuit.TotalPower()}")
 
-# num_sim = 75
-# num_sim = 150
-
 ################# read in config file ###########################################
 print("reading json")
 filename = "..\\37Bus.json"
@@ -87,35 +81,31 @@ print("reading json okay!")
 
 PUBLICATIONS = {}
 SUBSCRIPTIONS = {}
-
-fedinfo = h.helicsCreateFederateInfo()
-
-h.helicsFederateInfoSetCoreName(fedinfo, f"{federate_name}")
-h.helicsFederateInfoSetCoreTypeFromString(fedinfo, "zmq")
-h.helicsFederateInfoSetCoreInitString(fedinfo, "--federates=1")
+# define federate information (configuration)
+fedinfo = h.helicsCreateFederateInfo() # initialization
+h.helicsFederateInfoSetCoreName(fedinfo, f"{federate_name}") # define name
+h.helicsFederateInfoSetCoreTypeFromString(fedinfo, "zmq") # core type:
+h.helicsFederateInfoSetCoreInitString(fedinfo, "--federates=1") # define number of federate connect to this core
 h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 1.0)
 
-# create the federate
+# create the value federate: this type of federate is used for exchange electrical information
 fed = h.helicsCreateValueFederate(f"{federate_name}", fedinfo)
 print(f"{federate_name}: Combination federate created", flush=True)
 
+# define pub and sub through json
 # for k, v in publications.items():
 #     pub = h.helicsFederateRegisterTypePublication(fed, v["topic"], "complex", "")
 #     PUBLICATIONS[k] = pub
 # for k, v in subscriptions.items():
 #     sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
 #     SUBSCRIPTIONS[k] = sub
+
+# define pub and sub directly:
 sub = h.helicsFederateRegisterSubscription(fed, "voltage", "")
 pub = h.helicsFederateRegisterGlobalTypePublication(fed, "load", "complex", "")
 
-print('Before')
 h.helicsFederateEnterExecutingMode(fed)
-print('After')
-
-def cart2pol(x, y):
-    rho = np.sqrt(x**2 + y**2)
-    phi = np.arctan2(y, x)
-    return(rho, phi)
+################### Now start executation ###################
 
 current_time = 0
 
@@ -131,17 +121,17 @@ for request_time in range(0, int(total_time), int(step_time)):
     S = dss.Circuit.TotalPower()
     P = S[0]
     Q = S[1]
+
+    # now publish the results
+    h.helicsPublicationPublishComplex(pub, -P / 2500, -Q / 2500)  # relative 40 multiply P
     print("Sent Active power at time {}: {} ".format(request_time, -P/2500))
     print("Sent Reactive power at time {}: {} ".format(request_time, -Q/2500))
 
-    h.helicsPublicationPublishComplex(pub, -P/2500, -Q/2500)
-
+    # now get sub the results
     voltage, angle_rad = h.helicsInputGetComplex(sub)
     # convert angle to degree
     angle_deg = np.degrees(angle_rad)
-
-    #dss.Circuit.SetActiveClass("Vsource")
-    #dss.Circuit.SetActiveElement("source")
+    # change the substation voltage and angle based on sub
     if current_time == 0:
         dss.Vsources.AngleDeg(0)
         dss.Vsources.PU(1)
@@ -152,10 +142,6 @@ for request_time in range(0, int(total_time), int(step_time)):
     print("Receive voltage ang at time {}: {} ".format(request_time, angle_deg))
 
 
-
-
-    # relative 40 multiply P
-
 h.helicsFederateFinalize(fed)
 
 h.helicsFederateFree(fed)
@@ -165,8 +151,9 @@ print("Federate finalized")
 
 
 
-
 """
+
+Notes: the following codes are for time series without helics
 
 allbusmagpu_ts = []
 
@@ -200,8 +187,5 @@ ax2 =v_results_df.plot(legend=False)
 
 ax3 = totalpower_results_df.plot()
 plt.show()
-
-
-
 
 """
