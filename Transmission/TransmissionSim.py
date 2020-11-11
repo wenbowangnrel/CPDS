@@ -47,14 +47,40 @@ load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
 
 
 # test run for transmission systems
-andes.main.config_logger()
-pfss = andes.load('network_model/t3ps.raw')
-pfss.PV.cache.refresh()
-pfss.PQ.cache.refresh()
-# setup system
-#pfss.setup()
-# run power flow
-pfss.PFlow.run()
+andes.main.config_logger(stream_level=20)
+
+#pfss = andes.load('network_model/t3ps.raw')
+# pfss.PV.cache.refresh()
+# pfss.PQ.cache.refresh()
+# # setup system
+# #pfss.setup()
+# # run power flow
+# pfss.PFlow.run()
+ieee14 = andes.get_case('ieee14/ieee14_full.xlsx')
+ds = andes.load(ieee14, setup=False)
+
+ds.setup()
+
+# use constant power model for PQ (we will come back to this later)
+ds.PQ.config.p2p = 1
+ds.PQ.config.q2q = 1
+ds.PQ.config.p2z = 0
+ds.PQ.config.q2z = 0
+
+# turn off under-voltage PQ-to-Z conversion
+ds.PQ.pq2z = 0
+
+#perform initial power flow for dynamic simulation initialization
+ds.PFlow.run()
+
+#time domain simulation initialization
+ds.TDS.init()
+
+#first run 0.1 to make sure everything runs well
+ds.TDS.config.tf = 0.1
+
+# start the 0.1 second dynamic simulation
+ds.TDS.run()
 
 #print(pfss.PV.p0.v)
 PQ_orig = pfss.PQ.p0.v # array of load at the PQ points
