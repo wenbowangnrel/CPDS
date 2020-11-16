@@ -18,6 +18,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import andes
 
+
 ##################### First define a broker for total cosim ###########################
 
 helicsversion = h.helicsGetVersion()
@@ -30,83 +31,6 @@ broker = h.helicsCreateBroker("zmq", "", brokerinitstring)
 isconnected = h.helicsBrokerIsConnected(broker)
 if isconnected == 1:
     print("Broker created and connected")
-
-# read load profile
-load_profile_df = pd.read_csv(os.getcwd() + '\\load_profile.csv', index_col=0)
-load_profile = load_profile_df.iloc[:, 0]
-# convert to in the range of [0.9, 1]
-old_min = load_profile.min()
-old_max = load_profile.max()
-new_max = 1
-new_min = 0.9
-load_profile_scaled = (load_profile - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
-load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
-
-# fig, ax1 = plt.subplots()
-# ax = load_profile_scaled.plot()
-
-
-# test run for transmission systems
-andes.main.config_logger(stream_level=20)
-
-#pfss = andes.load('network_model/t3ps.raw')
-# pfss.PV.cache.refresh()
-# pfss.PQ.cache.refresh()
-# # setup system
-# #pfss.setup()
-# # run power flow
-# pfss.PFlow.run()
-ieee14 = andes.get_case('ieee14/ieee14_full.xlsx')
-ds = andes.load(ieee14, setup=False)
-
-ds.setup()
-
-# use constant power model for PQ (we will come back to this later)
-ds.PQ.config.p2p = 1
-ds.PQ.config.q2q = 1
-ds.PQ.config.p2z = 0
-ds.PQ.config.q2z = 0
-
-# turn off under-voltage PQ-to-Z conversion
-ds.PQ.pq2z = 0
-
-#perform initial power flow for dynamic simulation initialization
-ds.PFlow.run()
-
-#time domain simulation initialization
-ds.TDS.init()
-
-#first run 0.1 to make sure everything runs well
-ds.TDS.config.tf = 0.1
-
-# start the 0.1 second dynamic simulation
-ds.TDS.run()
-
-#print(pfss.PV.p0.v)
-PQ_orig = pfss.PQ.p0.v # array of load at the PQ points
-
-allbusv = pfss.Bus.v.v # voltage for all the buses
-allbusang = pfss.Bus.a.v
-bus_idx = pfss.Bus.idx.v
-# get the load index
-loadbus_name = pfss.PQ.bus.v
-# get the load value
-loadp = pfss.PQ.p0.v
-loadq = pfss.PQ.q0.v
-loadname_p = dict(zip(loadbus_name, loadp))
-loadname_q = dict(zip(loadbus_name, loadq))
-############ put in the index ##########
-loadbus_idx = [] # this will have the same index as voltage
-for i in loadbus_name:
-    loadbus_idx.append(bus_idx.index(i))
-
-### manual define one bus for publication ###
-loadbusname_publication = 2
-# val for publication
-# voltage_publication = allbusv[bus_idx.index(loadbusname_publication)]
-# angle_publication = allbusang[bus_idx.index(loadbusname_publication)]
-
-# pfss.as_dict() # check all dict
 
 ################# reading in config file ###########################################
 print("reading json")
@@ -138,6 +62,78 @@ h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 1.0)
 fed = h.helicsCreateValueFederate(f"{federate_name}", fedinfo)
 print(f"{federate_name}: Combination federate created", flush=True)
 
+
+# read load profile
+# load_profile_df = pd.read_csv(os.getcwd() + '\\load_profile.csv', index_col=0)
+# load_profile = load_profile_df.iloc[:, 0]
+# # convert to in the range of [0.9, 1]
+# old_min = load_profile.min()
+# old_max = load_profile.max()
+# new_max = 1
+# new_min = 0.9
+# load_profile_scaled = (load_profile - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
+# load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
+
+# fig, ax1 = plt.subplots()
+# ax = load_profile_scaled.plot()
+
+
+# ###################  initialize transmission systems #####################################
+andes.main.config_logger(stream_level=20)
+
+#pfss = andes.load('network_model/t3ps.raw')
+# pfss.PV.cache.refresh()
+# pfss.PQ.cache.refresh()
+# # setup system
+# #pfss.setup()
+# # run power flow
+# pfss.PFlow.run()
+ieee14 = andes.get_case('ieee14/ieee14_full.xlsx')
+ss = andes.load(ieee14, setup=False)
+
+ss.setup()
+
+# use constant power model for PQ (we will come back to this later)
+ss.PQ.config.p2p = 1
+ss.PQ.config.q2q = 1
+ss.PQ.config.p2z = 0
+ss.PQ.config.q2z = 0
+
+# turn off under-voltage PQ-to-Z conversion
+ss.PQ.pq2z = 0
+
+#perform initial power flow for dynamic simulation initialization
+ss.PFlow.run()
+
+#time domain simulation initialization
+ss.TDS.init()
+
+#first run 0.1 to make sure everything runs well
+ss.TDS.config.tf = 0.1
+
+# start the 0.1 second dynamic simulation
+ss.TDS.run()
+
+shed_buses = ss.PQ.bus.v
+pq_shed_idx = ss.PQ.find_idx(keys='bus', values=shed_buses)
+
+# record the initial system load
+pq_p = ss.PQ.get(src='Ppf', idx=pq_shed_idx, attr='v')
+
+# pq_p = array([0.217, 0.5  , 0.478, 0.076, 0.15 , 0.295, 0.09 , 0.035, 0.061,
+#        0.135, 0.2  ]
+
+# Sbase = 100 MW
+
+# dae: differential–algebraic equation
+
+consistent_random_object = np.random.RandomState(123)
+
+Load_timeseries = consistent_random_object.normal(1, 0.01, int(total_time/step_time))
+#Load_timeseries_df = pd.DataFrame(Load_timeseries)
+
+# ss.Bus.v.a = array([14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27])
+
 # register the publication
 pub = h.helicsFederateRegisterGlobalTypePublication(fed, "voltage", "complex", "")
 sub = h.helicsFederateRegisterSubscription(fed, "load", "")
@@ -145,11 +141,13 @@ sub = h.helicsFederateRegisterSubscription(fed, "load", "")
 h.helicsFederateEnterExecutingMode(fed)
 print(f"{federate_name}: Entering execution mode", flush=True)
 
+print(f"===========Start simulation==================")
+
+
 # system nominal voltage 230 v
-num_sim = 150
-v_results = []
-num_v = pfss.Bus.v.v.shape[0]
-v_results_np = np.zeros([num_sim, num_v])
+#v_results = []
+#num_v = ss.Bus.v.v.shape[0]
+#v_results_np = np.zeros([num_sim, num_v])
 
 
 print(f"===========Start simulation==================")
@@ -157,37 +155,55 @@ current_time = 0
 for request_time in range(0, int(total_time), int(step_time)):
     while current_time < request_time:
         current_time = h.helicsFederateRequestTime(fed, request_time)
-
-    print(f"request_time={request_time}")
-
-    pfss.PV.cache.refresh()
-    pfss.PQ.cache.refresh()
-    # run one step of power flow
-    pfss.PFlow.run()
+    #print(f"request_time={request_time}")
+    # set power for all loads
+    pq_p_new = pq_p * Load_timeseries[int(request_time/step_time)]
+    ss.PQ.set(src='Ppf', idx=pq_shed_idx, attr='v', value=pq_p_new)
+    # here set the power from distribution (bus index=4)
     P, Q = h.helicsInputGetComplex(sub)
-    print("Receive active power at time {}: {} ".format(request_time, P))
-    print("Receive reactive power (not use) at time {}: {} ".format(request_time, Q))
-    # change the P, Q
-    pfss.PQ.p0.v = PQ_orig * load_profile_scaled.iloc[int(request_time)]
-    if current_time == 0:
+    print("Receive active power at time {}: {} kw".format(request_time, P))
+    print("Receive reactive power (not use) at time {}: {} kvar".format(request_time, Q))
+    # convert to pu
+    P = P/1e5
+    Q = Q/1e5
+    if current_time ==0:
         print("manually set up first step load bus P and Q")
-        P = pfss.PQ.p0.v[0]
+        P = ss.PQ.p0.v[2]
         Q = 0
     else:
-        pfss.PQ.p0.v[0] = P
+        ss.PQ.set(src='Ppf', idx=pq_shed_idx[2], attr='v', value=P) # set load as P
 
-    allbusv = pfss.Bus.v.v
-    allbusang = pfss.Bus.a.v
-
-    voltage = allbusv[bus_idx.index(loadbusname_publication)]
-    angle = allbusang[bus_idx.index(loadbusname_publication)]
-
-    print("Sent voltage mag at time {}: {} ".format(request_time, voltage))
-    print("Sent voltage ang at time {}: {} ".format(request_time, angle))
+    # start the 1 seconds dynamic simulation
+    ss.TDS.config.tf = step_time * (request_time + 1)
+    ss.TDS.run()
+    # get voltage and angle and publish
+    voltage = ss.Bus.v.v[3]
+    angle = ss.Bus.a.v[3]
+    print("Sent voltage mag at time {}: {} pu".format(request_time, voltage))
+    print("Sent voltage ang at time {}: {} rad".format(request_time, angle))
 
     h.helicsPublicationPublishComplex(pub, voltage, angle)
 
+    # if dynamic simulation can't converge, terminate the simulation
+    if ss.exit_code != 0:
+        raise ValueError(request_time)
 
+
+
+ss.TDS.load_plotter()
+
+#plot the system frequency
+# ss.TDS.plt.plot(ss.ACEc.f, ytimes=60, ylabel='Frequency (Hz)')
+#
+# #plot the system ACE
+# ss.TDS.plt.plot(ss.ACEc.ace, ytimes=100, ylabel='ACE (MW)')
+#
+# #plot the bus voltage magnitude
+# ss.TDS.plt.plot(ss.Bus.v, a=(0, 1, 2, 6), ylabel='Voltage (p.u.)')
+# # get all voltage and save
+dae_ts_y = ss.dae.ts.y[:, ss.Bus.v.a[3]]
+            #ss.dae.ts.t
+#np.savetxt("dae_ts_y.csv", dae_ts_y, delimiter=",")
 # after the loop
 h.helicsFederateFinalize(fed)
 print(f"{federate_name}: Federate finalized",flush=True)
@@ -195,6 +211,11 @@ print(f"{federate_name}: Federate finalized",flush=True)
 h.helicsFederateFree(fed)
 h.helicsCloseLibrary()
 print("Broker disconnected")
+
+
+
+
+
 
 """
 notes: the following codes are for time series power flow without helics 
@@ -233,3 +254,4 @@ v_results_df = pd.DataFrame(v_results_np)
 ax2 = v_results_df.plot()
 plt.show()
 """
+

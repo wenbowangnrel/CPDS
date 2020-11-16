@@ -1,5 +1,5 @@
 {
-  "total_time": 300,
+  "total_time": 60,
   "coreType": "zmq",
   "loglevel": 5,
   "name": "TransmissionSim",
@@ -16,7 +16,7 @@
       "element_name": "2",
       "element_type": "Bus"
     }},
-  "step_time": 4.0,
+  "step_time": 1,
   "subscriptions": {
     "37Bus/totalload": {
       "type": "complex",

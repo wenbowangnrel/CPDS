@@ -8,10 +8,10 @@
       "name": "TransmissionSim"
     },
     {
-      "directory": "./Distribution",
-      "exec": "python -u 37Bus.py",
+      "directory": "./Distribution/34Bus",
+      "exec": "python -u 34Bus.py",
       "host": "localhost",
-      "name": "37Bus"
+      "name": "34Bus"
     }
   ],
   "name": " CPDS-T-D-Cosimulation-HELICSRunner"
