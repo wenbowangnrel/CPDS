@@ -1,9 +1,9 @@
-ANDES 1.2.3.post4+gc278e54
+ANDES 1.2.4.post41+g99050e26
 Copyright (C) 2015-2020 Hantao Cui
 
 ANDES comes with ABSOLUTELY NO WARRANTY
 Case file: c:\users\wwang2\documents\oe\andes\andes\cases\ieee14\ieee14_full.xlsx
-Report time: 11/12/2020 08:54:35 AM
+Report time: 11/17/2020 02:51:55 PM
 
 Power flow converged in 4 iterations.
 Flat-start: No

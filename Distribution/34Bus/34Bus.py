@@ -98,12 +98,12 @@ print(f"{federate_name}: Combination federate created", flush=True)
 # for k, v in publications.items():
 #     pub = h.helicsFederateRegisterTypePublication(fed, v["topic"], "complex", "")
 #     PUBLICATIONS[k] = pub
-# for k, v in subscriptions.items():
-#     sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
-#     SUBSCRIPTIONS[k] = sub
+for k, v in subscriptions.items():
+    sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
+    SUBSCRIPTIONS[k] = sub
 
 # define pub and sub directly:
-sub = h.helicsFederateRegisterSubscription(fed, "voltage", "")
+#sub = h.helicsFederateRegisterSubscription(fed, "voltage", "")
 pub = h.helicsFederateRegisterGlobalTypePublication(fed, "load", "complex", "")
 
 h.helicsFederateEnterExecutingMode(fed)
@@ -139,9 +139,16 @@ for request_time in range(0, int(total_time), int(step_time)):
     print("Sent Reactive power at time {}: {} kvar".format(request_time, Q))
 
     # now get sub the results
-    voltage, angle_rad = h.helicsInputGetComplex(sub)
+    for key, sub in SUBSCRIPTIONS.items():
+        val = h.helicsInputGetComplex(sub)
+        if subscriptions[key]['value'] == 'Voltage':
+
+            print("Receive voltage mag at time {}: {} pu".format(request_time, val[0]))
+            print("Receive voltage ang at time {}: {} rad".format(request_time, val[1]))
+
+        voltage, angle_rad = val
     # convert angle to degree
-    angle_deg = np.degrees(angle_rad)
+        angle_deg = np.degrees(angle_rad)
     # change the substation voltage and angle based on sub
     #print(f'current time={current_time}')
     if current_time == 0:
@@ -151,8 +158,8 @@ for request_time in range(0, int(total_time), int(step_time)):
     else:
         dss.Vsources.AngleDeg(angle_deg)
         dss.Vsources.PU(voltage)
-    print("Receive voltage mag at time {}: {} pu".format(request_time, voltage))
-    print("Receive voltage ang at time {}: {} rad".format(request_time, angle_rad))
+    # print("Receive voltage mag at time {}: {} pu".format(request_time, voltage))
+    # print("Receive voltage ang at time {}: {} rad".format(request_time, angle_rad))
     # change load according to load profile
     dss.Loads.First()
     for j in range(dss.Loads.Count()):
@@ -165,7 +172,9 @@ for request_time in range(0, int(total_time), int(step_time)):
         run_command('edit load.{ln} kw={kw}'.format(ln=loadname, kw=loadkw_new))
         run_command('edit load.{ln} kvar={kw}'.format(ln=loadname, kw=loadkvar_new))
         dss.Loads.Next()
-
+    #import pdb; pdb.set_trace()
+voltage_results = pd.DataFrame(allbusmagpu_ts, columns=allnodenames)
+voltage_results.to_csv(dir_to_feeder+'\\voltage_results.csv')
 
 h.helicsFederateFinalize(fed)
 

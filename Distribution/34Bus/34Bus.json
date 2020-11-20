@@ -24,7 +24,7 @@
     "sourcebus/pu": {
       "element_name": "sourcebus",
       "element_type": "Bus",
-      "topic": "sourcebus/sourcebus/pu",
+      "topic": "TransmissionSim/Voltage_4",
       "required": true,
       "key": "TransmissionSim/transmission_voltage",
       "type": "complex",

@@ -5,15 +5,26 @@
   "name": "TransmissionSim",
   "period": 1.0,
   "publications": {
-    "TransmissionSim/transmission_voltage": {
+    "transmission_voltage/bus_4": {
       "type": "complex",
       "global": true,
       "unit": "pu",
-      "vbase": 230,
+      "vbase": 69,
       "vbase_unit": "kv",
-      "topic": "Voltage0",
+      "topic": "TransmissionSim/Voltage_4",
       "value":  "Voltage",
-      "element_name": "2",
+      "element_name": "4",
+      "element_type": "Bus"
+    },
+    "transmission_voltage/bus_9": {
+      "type": "complex",
+      "global": true,
+      "unit": "pu",
+      "vbase": 138,
+      "vbase_unit": "kv",
+      "topic": "TransmissionSim/Voltage_9",
+      "value":  "Voltage",
+      "element_name": "9",
       "element_type": "Bus"
     }},
   "step_time": 1,
