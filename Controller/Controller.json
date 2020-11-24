@@ -1,0 +1,33 @@
+{
+  "name": "Controller",
+  "coreType": "zmq",
+  "core_init_string": "1",
+  "filename": "/path/to/file",
+  "loglevel": 5,
+  "period": 0.01,
+  "simulation_step_time": 0.04,
+  "control_interval": 2,
+  "total_time": 10,
+  "publications": {
+      "AGC_signal": {
+      "element_name": "",
+      "element_type": "",
+      "topic": "Controller/AGC_signal",
+      "type": "double",
+      "value": "Power",
+      "unit": "kw"
+    }
+  },
+  "subscriptions": {
+    "Frequency": {
+      "element_name": "",
+      "element_type": "",
+      "topic": "TransmissionSim/frequency",
+      "required": true,
+      "type": "double",
+      "unit": "Hz",
+      "value": "f_delta"
+    }
+  }
+
+}

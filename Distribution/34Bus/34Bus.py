@@ -88,7 +88,7 @@ fedinfo = h.helicsCreateFederateInfo() # initialization
 h.helicsFederateInfoSetCoreName(fedinfo, f"{federate_name}") # define name
 h.helicsFederateInfoSetCoreTypeFromString(fedinfo, "zmq") # core type:
 h.helicsFederateInfoSetCoreInitString(fedinfo, "--federates=1") # define number of federate connect to this core
-h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 1.0)
+h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 1)
 
 # create the value federate: this type of federate is used for exchange electrical information
 fed = h.helicsCreateValueFederate(f"{federate_name}", fedinfo)
@@ -160,7 +160,7 @@ for request_time in range(0, int(total_time), int(step_time)):
     for j in range(dss.Loads.Count()):
         loadname = dss.Loads.Name()
         # now calculate kw and kvar based on the csv
-        load_mult = load_profile_scaled.iloc[request_time]
+        load_mult = load_profile_scaled.iloc[int(current_time)]
         loadkw_new = load_mult * loadkw_dict[loadname]
         loadkvar_new = load_mult * loadkvar_dict[loadname]
         # now change opendss load object

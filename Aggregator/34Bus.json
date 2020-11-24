@@ -1,0 +1,36 @@
+{
+  "name": "34Bus",
+  "coreType": "zmq",
+  "core_init_string": "1",
+  "direction_multiplier": 1,
+  "endpoint_subscriptions": {},
+  "filename": "/path/to/file",
+  "loglevel": 5,
+  "period": 1.0,
+  "step_time": 1,
+  "total_time": 60,
+  "publications": {
+      "sourcebus/TotalPower": {
+      "element_name": "sourcebus",
+      "element_type": "Bus",
+      "topic": "34Bus/Totalload",
+      "type": "complex",
+      "value": "Power",
+      "unit": "kva",
+      "fold": "sum"
+    }
+  },
+  "subscriptions": {
+    "sourcebus/pu": {
+      "element_name": "sourcebus",
+      "element_type": "Bus",
+      "topic": "TransmissionSim/Voltage_4",
+      "required": true,
+      "key": "TransmissionSim/transmission_voltage",
+      "type": "complex",
+      "unit": "pu",
+      "value": "Voltage"
+    }
+  }
+
+}

@@ -35,14 +35,16 @@
       "required": true,
       "topic": "34Bus/Totalpower",
       "value": "Powers",
-      "element_name": "4"
+      "element_name": "4",
+      "bus_PQ_index": 2
     },
     "8500Node": {
       "type": "complex",
       "required": true,
       "topic": "8500Node/Totalpower",
       "value": "Powers",
-      "element_name": "9"
+      "element_name": "9",
+      "bus_PQ_index": 5
     }
   },
   "uninterruptible": true
