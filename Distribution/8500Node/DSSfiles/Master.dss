@@ -3,7 +3,7 @@
 
 Clear
 
-New Circuit.IEEE8500_1 bus1=8500_1 pu=1.05 basekV=138 r1=0  x1=0.001  r0=0  x0=0.001  
+New Circuit.8500Node bus1=8500Node pu=1.05 basekV=138 r1=0  x1=0.001  r0=0  x0=0.001  
 
 
 ! Make the source stiff with small impedance
@@ -29,5 +29,5 @@ Buscoords  Buscoords.dss
 
 Set Maxiterations=20
 solve
-show losses
-show voltage ln nodes
+!show losses
+!show voltage ln nodes

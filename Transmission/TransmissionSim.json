@@ -26,14 +26,23 @@
       "value":  "Voltage",
       "element_name": "9",
       "element_type": "Bus"
-    }},
+    }
+  },
   "step_time": 1,
   "subscriptions": {
-    "37Bus/totalload": {
+    "34Bus": {
       "type": "complex",
       "required": true,
-      "topic": "totalload",
-      "value": "Powers"
+      "topic": "34Bus/Totalpower",
+      "value": "Powers",
+      "element_name": "4"
+    },
+    "8500Node": {
+      "type": "complex",
+      "required": true,
+      "topic": "8500Node/Totalpower",
+      "value": "Powers",
+      "element_name": "9"
     }
   },
   "uninterruptible": true

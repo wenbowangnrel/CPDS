@@ -12,6 +12,12 @@
       "exec": "python -u 34Bus.py",
       "host": "localhost",
       "name": "34Bus"
+    },
+    {
+      "directory": "./Distribution/8500Node",
+      "exec": "python -u 8500Node.py",
+      "host": "localhost",
+      "name": "8500Node"
     }
   ],
   "name": " CPDS-T-D-Cosimulation-HELICSRunner"

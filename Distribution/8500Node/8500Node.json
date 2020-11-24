@@ -1,5 +1,5 @@
 {
-  "name": "37Bus",
+  "name": "8500Node",
   "coreType": "zmq",
   "core_init_string": "1",
   "direction_multiplier": 1,
@@ -7,25 +7,24 @@
   "filename": "/path/to/file",
   "loglevel": 5,
   "period": 1.0,
-  "step_time": 4,
-  "total_time": 300,
+  "step_time": 1,
+  "total_time": 60,
   "publications": {
       "sourcebus/TotalPower": {
       "element_name": "sourcebus",
       "element_type": "Bus",
-      "topic": "dss/Circuit/TotalPower",
+      "topic": "8500Node/Totalpower",
       "type": "complex",
       "value": "Power",
       "unit": "kva",
       "fold": "sum"
     }
   },
-  "step_time": 4,
   "subscriptions": {
     "sourcebus/pu": {
       "element_name": "sourcebus",
       "element_type": "Bus",
-      "topic": "sourcebus/sourcebus/pu",
+      "topic": "TransmissionSim/Voltage_9",
       "required": true,
       "key": "TransmissionSim/transmission_voltage",
       "type": "complex",

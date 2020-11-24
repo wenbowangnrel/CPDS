@@ -13,7 +13,7 @@
       "sourcebus/TotalPower": {
       "element_name": "sourcebus",
       "element_type": "Bus",
-      "topic": "dss/Circuit/TotalPower",
+      "topic": "34Bus/Totalload",
       "type": "complex",
       "value": "Power",
       "unit": "kva",

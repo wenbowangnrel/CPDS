@@ -104,7 +104,7 @@ for k, v in subscriptions.items():
 
 # define pub and sub directly:
 #sub = h.helicsFederateRegisterSubscription(fed, "voltage", "")
-pub = h.helicsFederateRegisterGlobalTypePublication(fed, "load", "complex", "")
+pub = h.helicsFederateRegisterGlobalTypePublication(fed, "34Bus/Totalpower", "complex", "")
 
 h.helicsFederateEnterExecutingMode(fed)
 ################### Now start executation ###################
@@ -123,9 +123,6 @@ for request_time in range(0, int(total_time), int(step_time)):
     allbusmagpu = dss.Circuit.AllBusMagPu()
     allbusmagpu_ts.append(allbusmagpu)
     totalpower_ts.append(dss.Circuit.TotalPower())
-
-
-    #dss.run_command("show voltage ln nodes")
     S = dss.Circuit.TotalPower()
     P = -S[0]
     Q = -S[1]
@@ -135,19 +132,19 @@ for request_time in range(0, int(total_time), int(step_time)):
     Q = Q*scale
     # now publish the results
     h.helicsPublicationPublishComplex(pub, P, Q)
-    print("Sent Active power at time {}: {} kw".format(request_time, P))
-    print("Sent Reactive power at time {}: {} kvar".format(request_time, Q))
+    print("Sent Active power at time {}: {} kw".format(current_time, P))
+    print("Sent Reactive power at time {}: {} kvar".format(current_time, Q))
 
     # now get sub the results
     for key, sub in SUBSCRIPTIONS.items():
         val = h.helicsInputGetComplex(sub)
         if subscriptions[key]['value'] == 'Voltage':
 
-            print("Receive voltage mag at time {}: {} pu".format(request_time, val[0]))
-            print("Receive voltage ang at time {}: {} rad".format(request_time, val[1]))
+            print("Received voltage mag at time {}: {} pu".format(current_time, val[0]))
+            print("Received voltage ang at time {}: {} rad".format(current_time, val[1]))
 
         voltage, angle_rad = val
-    # convert angle to degree
+        # convert angle to degree
         angle_deg = np.degrees(angle_rad)
     # change the substation voltage and angle based on sub
     #print(f'current time={current_time}')
@@ -158,23 +155,20 @@ for request_time in range(0, int(total_time), int(step_time)):
     else:
         dss.Vsources.AngleDeg(angle_deg)
         dss.Vsources.PU(voltage)
-    # print("Receive voltage mag at time {}: {} pu".format(request_time, voltage))
-    # print("Receive voltage ang at time {}: {} rad".format(request_time, angle_rad))
     # change load according to load profile
     dss.Loads.First()
     for j in range(dss.Loads.Count()):
         loadname = dss.Loads.Name()
         # now calculate kw and kvar based on the csv
-        load_mult = load_profile_scaled.iloc[i]
+        load_mult = load_profile_scaled.iloc[request_time]
         loadkw_new = load_mult * loadkw_dict[loadname]
         loadkvar_new = load_mult * loadkvar_dict[loadname]
         # now change opendss load object
         run_command('edit load.{ln} kw={kw}'.format(ln=loadname, kw=loadkw_new))
         run_command('edit load.{ln} kvar={kw}'.format(ln=loadname, kw=loadkvar_new))
         dss.Loads.Next()
-    #import pdb; pdb.set_trace()
 voltage_results = pd.DataFrame(allbusmagpu_ts, columns=allnodenames)
-voltage_results.to_csv(dir_to_feeder+'\\voltage_results.csv')
+#voltage_results.to_csv(dir_to_feeder+'\\voltage_results.csv')
 
 h.helicsFederateFinalize(fed)
 
@@ -182,44 +176,3 @@ h.helicsFederateFree(fed)
 h.helicsCloseLibrary()
 print("Federate finalized")
 
-
-
-
-"""
-
-Notes: the following codes are for time series without helics
-
-allbusmagpu_ts = []
-
-totalpower_ts = []
-
-for i in range(num_sim):
-    print(f"Doing {i} time step: at load multiply {load_profile.iloc[i]}")
-    dss.Loads.First()
-    for j in range(dss.Loads.Count()):
-        loadname = dss.Loads.Name()
-        # now calculate kw and kvar based on the csv
-        load_mult = load_profile.iloc[i]
-        loadkw_new = load_mult * loadkw_dict[loadname]
-        loadkvar_new = load_mult * loadkvar_dict[loadname]
-        # now change opendss load object
-        run_command('edit load.{ln} kw={kw}'.format(ln=loadname, kw=loadkw_new))
-        run_command('edit load.{ln} kvar={kw}'.format(ln=loadname, kw=loadkvar_new))
-        dss.Loads.Next()
-    run_command('solve')
-    allbusmagpu = dss.Circuit.AllBusMagPu()
-    allbusmagpu_ts.append(allbusmagpu)
-    totalpower_ts.append(dss.Circuit.TotalPower())
-# change list of results to dataframe
-v_results_df = pd.DataFrame(allbusmagpu_ts)
-totalpower_array = np.array(totalpower_ts)
-totalpower_results_df = pd.DataFrame(-totalpower_array)
-#fig, ax2 = plt.subplots()
-
-
-ax2 =v_results_df.plot(legend=False)
-
-ax3 = totalpower_results_df.plot()
-plt.show()
-
-"""

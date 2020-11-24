@@ -24,7 +24,7 @@ import andes
 helicsversion = h.helicsGetVersion()
 print("Helics version = {}".format(helicsversion))
 # start a broker inside the file
-brokerinitstring = "-f 2 --name=mainbroker" # 3 is the number of federates connecting
+brokerinitstring = "-f 3 --name=mainbroker" # 3 is the number of federates connecting
 
 # Create broker #
 broker = h.helicsCreateBroker("zmq", "", brokerinitstring)
@@ -118,22 +118,17 @@ for k, v in publications.items():
     pub = h.helicsFederateRegisterGlobalTypePublication(fed, v['topic'], "complex", "") # register to helics
     PUBLICATIONS[k] = pub # store the HELICS object
 
+for k, v in subscriptions.items():
+    sub = h.helicsFederateRegisterSubscription(fed, v['topic'], "")
+    SUBSCRIPTIONS[k] = sub  # store the HELICS object
+#sub = h.helicsFederateRegisterSubscription(fed, "load", "")
 
-sub = h.helicsFederateRegisterSubscription(fed, "load", "")
 ############### Entering Execution Mode ########################
 h.helicsFederateEnterExecutingMode(fed)
 print(f"{federate_name}: Entering execution mode", flush=True)
 
 print(f"===========Start simulation==================")
 
-
-# system nominal voltage 230 v
-#v_results = []
-#num_v = ss.Bus.v.v.shape[0]
-#v_results_np = np.zeros([num_sim, num_v])
-
-
-print(f"===========Start simulation==================")
 current_time = 0
 for request_time in range(0, int(total_time), int(step_time)):
     while current_time < request_time:
@@ -143,18 +138,22 @@ for request_time in range(0, int(total_time), int(step_time)):
     pq_p_new = pq_p * Load_timeseries[int(request_time/step_time)]
     ss.PQ.set(src='Ppf', idx=pq_shed_idx, attr='v', value=pq_p_new)
     # here set the power from distribution (bus index=4)
-    P, Q = h.helicsInputGetComplex(sub)
-    print("Receive active power at time {}: {} kw".format(request_time, P))
-    print("Receive reactive power (not use) at time {}: {} kvar".format(request_time, Q))
-    # convert to pu
-    P = P/1e5
-    Q = Q/1e5
-    if current_time ==0:
-        print("manually set up first step load bus P and Q")
-        P = ss.PQ.p0.v[2]
-        Q = 0
-    else:
-        ss.PQ.set(src='Ppf', idx=pq_shed_idx[2], attr='v', value=P) # set load as P
+    for key, sub in SUBSCRIPTIONS.items():
+        val = h.helicsInputGetComplex(sub) # val is P, Q
+        bus_name = subscriptions[key]['element_name']
+
+        P, Q = val
+        print("Received active power from {} at time {}: {} kw".format(key, current_time, P))
+        print("Received reactive power (not use) from {} at time {}: {} kvar".format(key, current_time, Q))
+        # convert to pu
+        P = P/1e5
+        Q = Q/1e5
+        if current_time ==0:
+            print("manually set up first step load bus P and Q")
+            P = ss.PQ.p0.v[int(bus_name)]
+            Q = 0
+        else:
+            ss.PQ.set(src='Ppf', idx=pq_shed_idx[int(bus_name)], attr='v', value=P) # set load as P
 
     # start the 1 seconds dynamic simulation
     ss.TDS.config.tf = step_time * (request_time + 1)
@@ -163,30 +162,19 @@ for request_time in range(0, int(total_time), int(step_time)):
     for key, pub in PUBLICATIONS.items():
         if publications[key]['value']=='Voltage':
             bus_name = publications[key]['element_name']
-            val1 = ss.Bus.v.v[int(bus_name)]
-            val2 = ss.Bus.a.v[int(bus_name)]
+            type = publications[key]['element_type']
+            val1 = ss.Bus.v.v[int(bus_name)-1]
+            val2 = ss.Bus.a.v[int(bus_name)-1]
 
-            print("Sent voltage mag at time {}: {} pu to bus {}".format(request_time, val1, bus_name))
-            print("Sent voltage ang at time {}: {} rad to bus {}".format(request_time, val2, bus_name))
+            print("Sent voltage mag at time {}: {} pu from {} {}".format(current_time, val1, type, bus_name))
+            print("Sent voltage ang at time {}: {} rad from {} {}".format(current_time, val2, type, bus_name))
         # get voltage and angle and publish
 
         h.helicsPublicationPublishComplex(pub, val1, val2)
-    #import pdb; pdb.set_trace()
-
-
-    # voltage = ss.Bus.v.v[3]
-    # angle = ss.Bus.a.v[3]
-    # print("Sent voltage mag at time {}: {} pu".format(request_time, voltage))
-    # print("Sent voltage ang at time {}: {} rad".format(request_time, angle))
-    #import pdb;pdb.set_trace()
-
-
-
-    #h.helicsPublicationPublishComplex(pub, voltage, angle)
 
     # if dynamic simulation can't converge, terminate the simulation
     if ss.exit_code != 0:
-        raise ValueError(request_time)
+        raise ValueError(current_time)
 
 
 
@@ -201,13 +189,10 @@ ss.TDS.plt.plot(ss.ACEc.f, ytimes=60, ylabel='Frequency (Hz)')
 # #plot the bus voltage magnitude
 #ss.TDS.plt.plot(ss.Bus.v, a=(0, 1, 2, 6), ylabel='Voltage (p.u.)')
 # # get all voltage and save
-ss.dae.ts.y
-ss.dae.ts.y
-ss.dae.ts.y
+
 y_object = ss.dae.ts.y
 
 dae_ts_y = ss.dae.ts.y[:, ss.Bus.v.a[3]]
-            #ss.dae.ts.t
 #np.savetxt("dae_ts_y.csv", dae_ts_y, delimiter=",")
 # after the loop
 voltage_all = ss.dae.ts.y[:, ss.Bus.v.a]
@@ -235,47 +220,4 @@ print(f"{federate_name}: Federate finalized",flush=True)
 h.helicsFederateFree(fed)
 h.helicsCloseLibrary()
 print("Broker disconnected")
-
-
-
-
-
-
-"""
-notes: the following codes are for time series power flow without helics 
-#num_sim = 75 # 5*60/4
-#num_sim = 5
-
-for i in range(num_sim):
-    print(f"Doing {i} time step: at load multiply {load_profile_scaled.iloc[i]}")
-    # change load of TransmissionSim
-    # TODO how to change input
-    # load index [2, 3, 5, 6, 8, 10, 12]
-    pfss.PQ.p0.v = PQ_orig*load_profile_scaled.iloc[i]
-
-    # n = 0
-    # for ldi in list([2, 3, 5, 6, 8, 10, 12]):  # wenbo notes: update load, Sbase = 100 MVA
-    #     pfss.PQ.p0.v[ldi] = pfss.PQ.p0.v[ldi]*load_profile_scaled.iloc[i]
-    #     n = n + 1
-
-    # transmission run step function
-    pfss.PV.cache.refresh()
-    pfss.PQ.cache.refresh()
-    # setup system
-    pfss.setup()
-    # run power flow
-    pfss.PFlow.run()
-
-    # TODO get the results variable out
-    v_all = pfss.Bus.v.v
-    v_results.append(pfss.Bus.v.v)
-    print(pfss.Bus.v.v)
-    v_results_np[i, :] = pfss.Bus.v.v
-
-v_results_df = pd.DataFrame(v_results_np)
-
-#fig, ax2 = plt.subplots()
-ax2 = v_results_df.plot()
-plt.show()
-"""
 
