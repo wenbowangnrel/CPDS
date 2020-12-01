@@ -8,6 +8,18 @@
       "name": "TransmissionSim"
     },
     {
+      "directory": "./Controller",
+      "exec": "python -u Controller.py",
+      "host": "localhost",
+      "name": "Controller"
+    },
+    {
+      "directory": "./Aggregator",
+      "exec": "python -u Aggregator.py",
+      "host": "localhost",
+      "name": "Aggregator"
+    },
+    {
       "directory": "./Distribution/34Bus",
       "exec": "python -u 34Bus.py",
       "host": "localhost",
@@ -20,5 +32,5 @@
       "name": "8500Node"
     }
   ],
-  "name": " CPDS-T-D-Cosimulation-HELICSRunner"
+  "name": "CPDS-T-D-Cosimulation-HELICSRunner"
 }

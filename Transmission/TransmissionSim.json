@@ -1,31 +1,54 @@
 {
-  "total_time": 60,
+  "total_time": 10,
   "coreType": "zmq",
   "loglevel": 5,
   "name": "TransmissionSim",
-  "period": 1.0,
+  "simulation_step_time": 0.02,
+  "period": 0.01,
   "publications": {
     "transmission_voltage/bus_4": {
+      "pub_interval": 1,
       "type": "complex",
       "global": true,
       "unit": "pu",
       "vbase": 69,
       "vbase_unit": "kv",
       "topic": "TransmissionSim/Voltage_4",
-      "value":  "Voltage",
+      "value": "Voltage",
       "element_name": "4",
       "element_type": "Bus"
     },
     "transmission_voltage/bus_9": {
+      "pub_interval": 1,
       "type": "complex",
       "global": true,
       "unit": "pu",
       "vbase": 138,
       "vbase_unit": "kv",
       "topic": "TransmissionSim/Voltage_9",
-      "value":  "Voltage",
+      "value": "Voltage",
       "element_name": "9",
       "element_type": "Bus"
+    },
+    "transmission_ACE": {
+      "pub_interval": 0.5,
+      "type": "double",
+      "global": true,
+      "unit": "100_MW",
+      "topic": "TransmissionSim/ACE",
+      "value": "ACE",
+      "element_name": "Transmission",
+      "element_type": "System"
+    },
+    "transmission_f": {
+      "pub_interval": 0.5,
+      "type": "double",
+      "global": true,
+      "unit": "Hz",
+      "topic": "TransmissionSim/Frequency",
+      "value": "Frequency",
+      "element_name": "Transmission",
+      "element_type": "System"
     }
   },
   "step_time": 1,
@@ -33,6 +56,7 @@
     "34Bus": {
       "type": "complex",
       "required": true,
+      "sub_interval": 1,
       "topic": "34Bus/Totalpower",
       "value": "Powers",
       "element_name": "4",
@@ -41,10 +65,27 @@
     "8500Node": {
       "type": "complex",
       "required": true,
+      "sub_interval": 1,
       "topic": "8500Node/Totalpower",
       "value": "Powers",
       "element_name": "9",
       "bus_PQ_index": 5
+    },
+    "Controller": {
+      "type": "vector",
+      "required": true,
+      "sub_interval": 2,
+      "topic": "Controller/AGC_signal",
+      "value": "AGC_signal_C",
+      "unit": "100_MW"
+    },
+    "Aggregator": {
+      "type": "vector",
+      "required": true,
+      "sub_interval": 2,
+      "topic": "Aggregator/AGC_signal",
+      "value": "AGC_signal_A",
+      "unit": "100_MW"
     }
   },
   "uninterruptible": true

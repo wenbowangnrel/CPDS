@@ -6,27 +6,29 @@
   "loglevel": 5,
   "period": 0.01,
   "simulation_step_time": 0.04,
-  "control_interval": 2,
   "total_time": 10,
+  "num_TurbineGov": 5,
   "publications": {
       "AGC_signal": {
-      "element_name": "",
-      "element_type": "",
-      "topic": "Controller/AGC_signal",
-      "type": "double",
-      "value": "Power",
-      "unit": "kw"
+        "pub_interval": 2,
+        "element_name": "Controller",
+        "element_type": "",
+        "topic": "AGC_signal",
+        "type": "vector",
+        "value": "AGC",
+        "unit": "100_MW"
     }
   },
   "subscriptions": {
-    "Frequency": {
+    "transmission_ACE": {
       "element_name": "",
       "element_type": "",
-      "topic": "TransmissionSim/frequency",
+      "sub_interval": 0.5,
+      "topic": "TransmissionSim/ACE",
       "required": true,
       "type": "double",
-      "unit": "Hz",
-      "value": "f_delta"
+      "unit": "100_MW",
+      "value": "ACE"
     }
   }
 

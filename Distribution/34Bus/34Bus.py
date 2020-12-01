@@ -19,21 +19,39 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 dir_to_feeder = os.getcwd()
-# read time series load profile data
-load_profile_df = pd.read_csv(dir_to_feeder + '\\DSSfiles\\load_profile.csv', index_col=0)
-load_profile = load_profile_df.iloc[:, 0]
+print(f"python_dir={os.getcwd()}")
 
-# convert it to the range in [0.9, 1]
-old_min = load_profile.min()
-old_max = load_profile.max()
-new_max = 1
-new_min = 0.9
-load_profile_scaled = (load_profile - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
-load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
+################# read in config file ###########################################
+print("reading json")
+filename = "34Bus.json"
+with open(filename) as f:
+    data = json.loads(f.read())
+    federate_name = data["name"]
+    total_time = data["total_time"]
+    simulation_step_time = data["simulation_step_time"]
+    subscriptions = data["subscriptions"]
+    publications = data["publications"]
+print("reading json okay!")
+
+
+# read time series load profile data
+# load_profile_df = pd.read_csv(dir_to_feeder + '\\DSSfiles\\load_profile.csv', index_col=0)
+# load_profile = load_profile_df.iloc[:, 0]
+#
+# # convert it to the range in [0.9, 1]
+# old_min = load_profile.min()
+# old_max = load_profile.max()
+# new_max = 1.1
+# new_min = 0.9
+# load_profile_scaled = (load_profile - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
+# load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
 
 # fig, ax1 = plt.subplots()
 # ax1 = load_profile.plot()
-print(f"os.getcwd()={os.getcwd()}")
+
+consistent_random_object = np.random.RandomState(321)
+load_profile_random = consistent_random_object.normal(1, 0.01, int(total_time/simulation_step_time))
+
 # test run Opendss feeder
 feeder_name = '34Bus'
 print('------ Running the {} feeder in opendss'.format(feeder_name))
@@ -67,18 +85,6 @@ allnodenames = dss.Circuit.AllNodeNames()
 
 print(f"Total power base line is {dss.Circuit.TotalPower()}")
 
-################# read in config file ###########################################
-print("reading json")
-filename = "..\\34Bus.json"
-with open(filename) as f:
-    data = json.loads(f.read())
-    federate_name = data["name"]
-    total_time = data["total_time"]
-    step_time = data["step_time"]
-    subscriptions = data["subscriptions"]
-    publications = data["publications"]
-print("reading json okay!")
-
 ################### create the federate info object ##################
 
 PUBLICATIONS = {}
@@ -88,23 +94,23 @@ fedinfo = h.helicsCreateFederateInfo() # initialization
 h.helicsFederateInfoSetCoreName(fedinfo, f"{federate_name}") # define name
 h.helicsFederateInfoSetCoreTypeFromString(fedinfo, "zmq") # core type:
 h.helicsFederateInfoSetCoreInitString(fedinfo, "--federates=1") # define number of federate connect to this core
-h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 1)
+h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 0.01)
 
 # create the value federate: this type of federate is used for exchange electrical information
 fed = h.helicsCreateValueFederate(f"{federate_name}", fedinfo)
 print(f"{federate_name}: Combination federate created", flush=True)
-
+#import pdb;pdb.set_trace()
 # define pub and sub through json
-# for k, v in publications.items():
-#     pub = h.helicsFederateRegisterTypePublication(fed, v["topic"], "complex", "")
-#     PUBLICATIONS[k] = pub
+for k, v in publications.items():
+    pub = h.helicsFederateRegisterTypePublication(fed, v["topic"], "complex", "")
+    PUBLICATIONS[k] = pub
 for k, v in subscriptions.items():
     sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
     SUBSCRIPTIONS[k] = sub
 
 # define pub and sub directly:
 #sub = h.helicsFederateRegisterSubscription(fed, "voltage", "")
-pub = h.helicsFederateRegisterGlobalTypePublication(fed, "34Bus/Totalpower", "complex", "")
+#pub = h.helicsFederateRegisterGlobalTypePublication(fed, "34Bus/Totalpower", "complex", "")
 
 h.helicsFederateEnterExecutingMode(fed)
 ################### Now start executation ###################
@@ -112,9 +118,8 @@ h.helicsFederateEnterExecutingMode(fed)
 current_time = 0
 allbusmagpu_ts = []
 totalpower_ts = []
-for request_time in range(0, int(total_time), int(step_time)):
+for request_time in np.arange(0, total_time, simulation_step_time):
     while current_time < request_time:
-
         current_time = h.helicsFederateRequestTime(fed, request_time)
         #print(current_time)
     print(f"current_time={current_time}")
@@ -143,24 +148,23 @@ for request_time in range(0, int(total_time), int(step_time)):
             print("Received voltage mag at time {}: {} pu".format(current_time, val[0]))
             print("Received voltage ang at time {}: {} rad".format(current_time, val[1]))
 
-        voltage, angle_rad = val
-        # convert angle to degree
-        angle_deg = np.degrees(angle_rad)
+            voltage, angle_rad = val
+            # convert angle to degree
+            angle_deg = np.degrees(angle_rad)
     # change the substation voltage and angle based on sub
     #print(f'current time={current_time}')
-    if current_time == 0:
-        print('manually set up first step voltage')
-        dss.Vsources.AngleDeg(0)
-        dss.Vsources.PU(1)
-    else:
-        dss.Vsources.AngleDeg(angle_deg)
-        dss.Vsources.PU(voltage)
+            if current_time == 0:
+                print('manually set up first step voltage')
+                angle_deg = 0
+                voltage = 1
+            dss.Vsources.AngleDeg(angle_deg)
+            dss.Vsources.PU(voltage)
     # change load according to load profile
     dss.Loads.First()
     for j in range(dss.Loads.Count()):
         loadname = dss.Loads.Name()
         # now calculate kw and kvar based on the csv
-        load_mult = load_profile_scaled.iloc[int(current_time)]
+        load_mult = load_profile_random[int(current_time/simulation_step_time)]
         loadkw_new = load_mult * loadkw_dict[loadname]
         loadkvar_new = load_mult * loadkvar_dict[loadname]
         # now change opendss load object
