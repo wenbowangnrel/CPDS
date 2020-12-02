@@ -91,7 +91,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         if publications[key]['value'] == 'AGC':
             element_unit = publications[key]['unit']
             element_name = publications[key]['element_name']
-            if current_time % publications[key]['pub_interval'] <= 1e-6:
+            if (10*current_time) % (10*publications[key]['pub_interval']) <= 1e-6:
                 print(f"Sent AGC signal at time {current_time}: {PVD_AGC_response} {element_unit} from {element_name}.")
                 h.helicsPublicationPublishVector(pub, list(PVD_AGC_response))
 

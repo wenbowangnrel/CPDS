@@ -50,7 +50,7 @@ print("reading json okay!")
 # ax1 = load_profile.plot()
 
 consistent_random_object = np.random.RandomState(321)
-load_profile_random = consistent_random_object.normal(1, 0.01, int(total_time/simulation_step_time))
+load_profile_random = consistent_random_object.normal(1, 0.0, int(total_time/simulation_step_time))
 
 # test run Opendss feeder
 feeder_name = '34Bus'

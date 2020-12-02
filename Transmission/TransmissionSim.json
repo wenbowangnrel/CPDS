@@ -1,5 +1,5 @@
 {
-  "total_time": 10,
+  "total_time": 40,
   "coreType": "zmq",
   "loglevel": 5,
   "name": "TransmissionSim",
@@ -31,7 +31,7 @@
       "element_type": "Bus"
     },
     "transmission_ACE": {
-      "pub_interval": 0.5,
+      "pub_interval": 0.1,
       "type": "double",
       "global": true,
       "unit": "100_MW",
@@ -41,7 +41,7 @@
       "element_type": "System"
     },
     "transmission_f": {
-      "pub_interval": 0.5,
+      "pub_interval": 0.1,
       "type": "double",
       "global": true,
       "unit": "Hz",

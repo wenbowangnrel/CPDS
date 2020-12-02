@@ -84,14 +84,18 @@ for request_time in np.arange(0, total_time, simulation_step_time):
                 print(f"Manually set up first step ACE {val} {val_unit}.")
 
             ##### use val (ACE) calculate AGC  ###########
-            paux0_new = paux0_new - val*0.02*0.196 # this is vector
-            print(f"paux0_new={paux0_new}")
+            if  current_time < 5:   
+                paux0_new = paux0_new - val*0.02*0.196 # this is vector
+                print(f"paux0_new={paux0_new}")
+            else:
+                paux0_new = paux0_new - val*0.02*0.245 # this is vector
+                print(f"paux0_new={paux0_new}")
     # get AGC published
     for key, pub in PUBLICATIONS.items():
         if publications[key]['value'] == 'AGC':
             element_unit = publications[key]['unit']
             element_name = publications[key]['element_name']
-            if current_time % publications[key]['pub_interval'] <= 1e-6:
+            if (10*current_time) % (10*publications[key]['pub_interval']) <= 1e-6:
                 print(f"Sent AGC signal at time {current_time}: {paux0_new} {element_unit} from {element_name}.")
                 h.helicsPublicationPublishVector(pub, list(paux0_new))
 

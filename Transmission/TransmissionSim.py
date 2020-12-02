@@ -127,11 +127,11 @@ pq_p = ss.PQ.get(src='Ppf', idx=pq_shed_idx, attr='v')
 
 # get the load time series randomly choose
 consistent_random_object = np.random.RandomState(123)
-Load_timeseries = consistent_random_object.normal(1, 0.01, int(total_time/simulation_step_time))
+Load_timeseries = consistent_random_object.normal(1, 0.0, int(total_time/simulation_step_time))
 #Load_timeseries_df = pd.DataFrame(Load_timeseries)
-pd.DataFrame(Load_timeseries).plot()
+
 # ss.Bus.v.a = array([14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27])
-plt.show()
+
 # register the publication
 for k, v in publications.items():
     pub = h.helicsFederateRegisterGlobalTypePublication(fed, v['topic'], v['type'], "") # register to helics
@@ -181,32 +181,32 @@ for request_time in np.arange(0, total_time, simulation_step_time):
             ss.PQ.set(src='Ppf', idx=pq_shed_idx[int(bus_PQ_index)], attr='v', value=P) # set load as P
             #print(f"total_bus_load = {ss.PQ.p0.v}")
         if subscriptions[key]['value']=='AGC_signal_C':
-            if current_time % subscriptions[key]['sub_interval']<=1e-6:
-                val = h.helicsInputGetVector(sub)
+            #if current_time % subscriptions[key]['sub_interval']<=1e-6:
+            val = h.helicsInputGetVector(sub)
+            val_unit = subscriptions[key]['unit']
+            if current_time == 0:
+                val = paux0_new_init
                 val_unit = subscriptions[key]['unit']
-                if current_time == 0:
-                    val = paux0_new_init
-                    val_unit = subscriptions[key]['unit']
 
-                # use val to adjust
-                print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
+            # use val to adjust
+            print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
 
-                paux0_new = np.array(val)  # go to add pub ACE
-                ss.TurbineGov.set(src='paux0', idx=tg_idx, attr='v', value=paux0_new)
+            paux0_new = np.array(val)  # go to add pub ACE
+            #ss.TurbineGov.set(src='paux0', idx=tg_idx, attr='v', value=paux0_new)
 
         if subscriptions[key]['value']=='AGC_signal_A':
-            if current_time % subscriptions[key]['sub_interval']<=1e-6:
-                val = h.helicsInputGetVector(sub)
+           # if current_time % subscriptions[key]['sub_interval']<=1e-6:
+            val = h.helicsInputGetVector(sub)
+            val_unit = subscriptions[key]['unit']
+            if current_time == 0:
+                val = PVD_AGC_response
                 val_unit = subscriptions[key]['unit']
-                if current_time == 0:
-                    val = PVD_AGC_response
-                    val_unit = subscriptions[key]['unit']
 
-                # use val to adjust
-                print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
+            # use val to adjust
+            print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
 
-                PVD_AGC_response = np.array(val)  # go to add pub ACE
-                ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
+            PVD_AGC_response = np.array(val)  # go to add pub ACE
+            #ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
 
 
     # start the dynamic simulation
@@ -234,7 +234,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
             element_unit = publications[key]['unit']
             element_name = publications[key]['element_name']
             frequency = ss.dae.ts.y[-1, ss.ACEc.f.a][0]*60
-            if current_time % publications[key]['pub_interval']<=1e-6:
+            if (current_time*10) % (10*publications[key]['pub_interval'])<=1e-6:
                 print(f"Sent frequency at time {current_time}: {frequency} {element_unit} from {element_name}.")
                 h.helicsPublicationPublishDouble(pub, frequency)
         # get ACE and publish
@@ -244,7 +244,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
             ACE = ss.ACEc.ace.v[0]
             print(f"publications[key]['pub_interval']={publications[key]['pub_interval']}")
             print(f"current_time % publications[key]['pub_interval']={current_time % publications[key]['pub_interval']}")
-            if current_time % publications[key]['pub_interval']<=1e-6:
+            if (10*current_time) % (10*publications[key]['pub_interval'])<=1e-6:
                 print(f"Sent ACE at time {current_time}: {ACE} {element_unit} from {element_name}.")
                 h.helicsPublicationPublishDouble(pub, ACE)
 
