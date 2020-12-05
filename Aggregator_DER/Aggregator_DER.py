@@ -22,7 +22,7 @@ dir_to_Controller = os.getcwd()
 
 ################# read in config file ###########################################
 print("reading json")
-filename = "Aggregator.json"
+filename = "Aggregator_DER.json"
 with open(filename) as f:
     data = json.loads(f.read())
     federate_name = data["name"]
@@ -55,7 +55,9 @@ for k, v in publications.items():
 for k, v in subscriptions.items():
     sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
     SUBSCRIPTIONS[k] = sub
-
+# register endpoints
+epid = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep", "")
+epid_filter = h.helicsFederateRegisterFilter(fed, "delay", "")
 # define pub and sub directly:
 
 h.helicsFederateEnterExecutingMode(fed)
@@ -71,30 +73,33 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     print(f"current_time={current_time}")
 
     # get ACE results
-    for key, sub in SUBSCRIPTIONS.items():
-        if subscriptions[key]['value'] == 'ACE':
-            #if current_time % subscriptions[key]['sub_interval']<=1e-6:
-            val = h.helicsInputGetDouble(sub)
-            val_unit = subscriptions[key]["unit"]
-            print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
-
-            if current_time == 0:
-                val = 0
-                val_unit = subscriptions[key]["unit"]
-                print(f"Manually set up first step ACE {val} {val_unit}.")
-
-            ##### use val (ACE) calculate AGC  ###########
-            PVD_AGC_response = PVD_AGC_response - val*0.02*0.001 # this is vector
-            print(f"PVD_AGC_response={PVD_AGC_response}")
-    # get AGC published
-    for key, pub in PUBLICATIONS.items():
-        if publications[key]['value'] == 'AGC':
-            element_unit = publications[key]['unit']
-            element_name = publications[key]['element_name']
-            if (10*current_time) % (10*publications[key]['pub_interval']) <= 1e-6:
-                print(f"Sent AGC signal at time {current_time}: {PVD_AGC_response} {element_unit} from {element_name}.")
-                h.helicsPublicationPublishVector(pub, list(PVD_AGC_response))
-
+    # for key, sub in SUBSCRIPTIONS.items():
+    #     if subscriptions[key]['value'] == 'ACE':
+    #         #if current_time % subscriptions[key]['sub_interval']<=1e-6:
+    #         val = h.helicsInputGetDouble(sub)
+    #         val_unit = subscriptions[key]["unit"]
+    #         print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
+    #
+    #         if current_time == 0:
+    #             val = 0
+    #             val_unit = subscriptions[key]["unit"]
+    #             print(f"Manually set up first step ACE {val} {val_unit}.")
+    #
+    #         ##### use val (ACE) calculate AGC  ###########
+    #         PVD_AGC_response = PVD_AGC_response - val*0.02*0.001 # this is vector
+    #         print(f"PVD_AGC_response={PVD_AGC_response}")
+    # # get AGC published
+    # for key, pub in PUBLICATIONS.items():
+    #     if publications[key]['value'] == 'AGC':
+    #         element_unit = publications[key]['unit']
+    #         element_name = publications[key]['element_name']
+    #         if (10*current_time) % (10*publications[key]['pub_interval']) <= 1e-6:
+    #             print(f"Sent AGC signal at time {current_time}: {PVD_AGC_response} {element_unit} from {element_name}.")
+    #             h.helicsPublicationPublishVector(pub, list(PVD_AGC_response))
+    print(f"current_time%2={current_time%2}")
+    if current_time % 2 <= 1e-6:
+        h.helicsEndpointSendMessageRaw(epid, "TransmissionSim_ep2", json.dumps(PVD_AGC_response.tolist()))
+        print(f"sending {PVD_AGC_response}")
 
 h.helicsFederateFinalize(fed)
 

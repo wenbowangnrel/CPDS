@@ -1,11 +1,11 @@
 {
-  "name": "Aggregator",
+  "name": "Aggregator_DER",
   "coreType": "zmq",
   "core_init_string": "1",
   "filename": "/path/to/file",
   "loglevel": 5,
   "period": 0.01,
-  "simulation_step_time": 0.06,
+  "simulation_step_time": 1,
   "total_time": 40,
   "num_DER": 20,
   "publications": {

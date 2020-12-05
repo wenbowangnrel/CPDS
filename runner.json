@@ -8,16 +8,16 @@
       "name": "TransmissionSim"
     },
     {
-      "directory": "./Controller",
-      "exec": "python -u Controller.py",
+      "directory": "./Controller_Thermal",
+      "exec": "python -u Controller_Thermal.py",
       "host": "localhost",
-      "name": "Controller"
+      "name": "Controller_Thermal"
     },
     {
-      "directory": "./Aggregator",
-      "exec": "python -u Aggregator.py",
+      "directory": "./Aggregator_DER",
+      "exec": "python -u Aggregator_DER.py",
       "host": "localhost",
-      "name": "Aggregator"
+      "name": "Aggregator_DER"
     },
     {
       "directory": "./Distribution/34Bus",

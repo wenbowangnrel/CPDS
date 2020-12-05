@@ -61,7 +61,7 @@ h.helicsFederateInfoSetTimeProperty(fedinfo, h.helics_property_time_delta, 0.01)
 #h.helicsFederateInfoSetLoggingLevel(fedinfo, 5)  # from loglevel in json
 
 # create value federate based on federate info: this type of federate is used for exchange electrical information
-fed = h.helicsCreateValueFederate(f"{federate_name}", fedinfo)
+fed = h.helicsCreateCombinationFederate(f"{federate_name}", fedinfo)
 print(f"{federate_name}: Combination federate created", flush=True)
 
 # ###################  initialize transmission systems #####################################
@@ -138,9 +138,11 @@ for k, v in publications.items():
     PUBLICATIONS[k] = pub # store the HELICS object
 
 for k, v in subscriptions.items():
-    print(k)
     sub = h.helicsFederateRegisterSubscription(fed, v['topic'], "")
     SUBSCRIPTIONS[k] = sub  # store the HELICS object
+
+epid1 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep1", "")
+epid2 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep2", "")
 
 ############### Entering Execution Mode ########################
 h.helicsFederateEnterExecutingMode(fed)
@@ -180,37 +182,58 @@ for request_time in np.arange(0, total_time, simulation_step_time):
 
             ss.PQ.set(src='Ppf', idx=pq_shed_idx[int(bus_PQ_index)], attr='v', value=P) # set load as P
             #print(f"total_bus_load = {ss.PQ.p0.v}")
-        if subscriptions[key]['value']=='AGC_signal_C':
-            #if current_time % subscriptions[key]['sub_interval']<=1e-6:
-            val = h.helicsInputGetVector(sub)
-            val_unit = subscriptions[key]['unit']
-            if current_time == 0:
-                val = paux0_new_init
-                val_unit = subscriptions[key]['unit']
+        # if subscriptions[key]['value']=='AGC_signal_C':
+        #     #if current_time % subscriptions[key]['sub_interval']<=1e-6:
+        #     val = h.helicsInputGetVector(sub)
+        #     val_unit = subscriptions[key]['unit']
+        #     if current_time == 0:
+        #         val = paux0_new_init
+        #         val_unit = subscriptions[key]['unit']
+        #
+        #     # use val to adjust
+        #     print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
+        #
+        #     paux0_new = np.array(val)  # go to add pub ACE
+        #     ss.TurbineGov.set(src='paux0', idx=tg_idx, attr='v', value=paux0_new)
+        #
+        # if subscriptions[key]['value']=='AGC_signal_A':
+        #    # if current_time % subscriptions[key]['sub_interval']<=1e-6:
+        #     val = h.helicsInputGetVector(sub)
+        #     val_unit = subscriptions[key]['unit']
+        #     if current_time == 0:
+        #         val = PVD_AGC_response
+        #         val_unit = subscriptions[key]['unit']
+        #
+        #     # use val to adjust
+        #     print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
+        #
+        #     PVD_AGC_response = np.array(val)  # go to add pub ACE
+        #     ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
+    while h.helicsEndpointHasMessage(epid1):
+        m = h.helicsEndpointGetMessage(epid1)
+        print(m.data)
+        #print(json.loads(m))
+        #print(m.data)
+        #m = h.helicsEndpointGetMessageObject(epid1)
+        #message1 = h.helicsMessageGetString(m)
+        print("yes1")
+        #print(f"Receive {message1}")
 
-            # use val to adjust
-            print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
+    while h.helicsEndpointHasMessage(epid2):
+        m = h.helicsEndpointGetMessage(epid2)
+        print(m.data)
+        print(type(m.data))
 
-            paux0_new = np.array(val)  # go to add pub ACE
-            #ss.TurbineGov.set(src='paux0', idx=tg_idx, attr='v', value=paux0_new)
-
-        if subscriptions[key]['value']=='AGC_signal_A':
-           # if current_time % subscriptions[key]['sub_interval']<=1e-6:
-            val = h.helicsInputGetVector(sub)
-            val_unit = subscriptions[key]['unit']
-            if current_time == 0:
-                val = PVD_AGC_response
-                val_unit = subscriptions[key]['unit']
-
-            # use val to adjust
-            print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
-
-            PVD_AGC_response = np.array(val)  # go to add pub ACE
-            #ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
-
-
+        print(json.loads(m.data))
+        print(type(json.loads(m.data)))
+        #m = h.helicsEndpointGetMessageObject(epid2)
+        #message2 = h.helicsMessageGetString(m)
+        #print(np.frombuffer(m))
+        print('yes2')
+        #print(f"m.data={m.data}")
     # start the dynamic simulation
     #print(f'current_time + simulation_step_time = {current_time+simulation_step_time}')
+
     ss.TDS.config.tf = current_time + simulation_step_time
     ss.TDS.run()
     # print(f"Bus_voltages = {ss.Bus.v.v}")
@@ -230,23 +253,23 @@ for request_time in np.arange(0, total_time, simulation_step_time):
                 print("Sent voltage ang at time {}: {} rad from {} {}".format(current_time, val2, element_type, bus_name))
                 h.helicsPublicationPublishComplex(pub, val1, val2)
         # get frequency and publish
-        if publications[key]['value']=='Frequency':
-            element_unit = publications[key]['unit']
-            element_name = publications[key]['element_name']
-            frequency = ss.dae.ts.y[-1, ss.ACEc.f.a][0]*60
-            if (current_time*10) % (10*publications[key]['pub_interval'])<=1e-6:
-                print(f"Sent frequency at time {current_time}: {frequency} {element_unit} from {element_name}.")
-                h.helicsPublicationPublishDouble(pub, frequency)
-        # get ACE and publish
-        if publications[key]['value']=='ACE':
-            element_unit = publications[key]['unit']
-            element_name = publications[key]['element_name']
-            ACE = ss.ACEc.ace.v[0]
-            print(f"publications[key]['pub_interval']={publications[key]['pub_interval']}")
-            print(f"current_time % publications[key]['pub_interval']={current_time % publications[key]['pub_interval']}")
-            if (10*current_time) % (10*publications[key]['pub_interval'])<=1e-6:
-                print(f"Sent ACE at time {current_time}: {ACE} {element_unit} from {element_name}.")
-                h.helicsPublicationPublishDouble(pub, ACE)
+        # if publications[key]['value']=='Frequency':
+        #     element_unit = publications[key]['unit']
+        #     element_name = publications[key]['element_name']
+        #     frequency = ss.dae.ts.y[-1, ss.ACEc.f.a][0]*60
+        #     if (current_time*10) % (10*publications[key]['pub_interval'])<=1e-6:
+        #         print(f"Sent frequency at time {current_time}: {frequency} {element_unit} from {element_name}.")
+        #         h.helicsPublicationPublishDouble(pub, frequency)
+        # # get ACE and publish
+        # if publications[key]['value']=='ACE':
+        #     element_unit = publications[key]['unit']
+        #     element_name = publications[key]['element_name']
+        #     ACE = ss.ACEc.ace.v[0]
+        #     print(f"publications[key]['pub_interval']={publications[key]['pub_interval']}")
+        #     print(f"current_time % publications[key]['pub_interval']={current_time % publications[key]['pub_interval']}")
+        #     if (10*current_time) % (10*publications[key]['pub_interval'])<=1e-6:
+        #         print(f"Sent ACE at time {current_time}: {ACE} {element_unit} from {element_name}.")
+        #         h.helicsPublicationPublishDouble(pub, ACE)
 
     # if dynamic simulation can't converge, terminate the simulation
     if ss.exit_code != 0:

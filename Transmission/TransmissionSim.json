@@ -75,7 +75,7 @@
       "type": "vector",
       "required": true,
       "sub_interval": 2,
-      "topic": "Controller/AGC_signal",
+      "topic": "Controller_Thermal/AGC_signal",
       "value": "AGC_signal_C",
       "unit": "100_MW"
     },
@@ -83,7 +83,7 @@
       "type": "vector",
       "required": true,
       "sub_interval": 2,
-      "topic": "Aggregator/AGC_signal",
+      "topic": "Aggregator_DER/AGC_signal",
       "value": "AGC_signal_A",
       "unit": "100_MW"
     }

@@ -1,13 +1,34 @@
 {
-  "name": "Controller",
+  "name": "Controller_Thermal",
   "coreType": "zmq",
   "core_init_string": "1",
   "filename": "/path/to/file",
   "loglevel": 5,
   "period": 0.01,
-  "simulation_step_time": 0.04,
+  "simulation_step_time": 1,
   "total_time":  40,
   "num_TurbineGov": 5,
+  "endpoints": [
+    {
+      "name": "Controller_Thermal/channel1",
+      "type": "AGC_Thermal",
+      "destination": "TransmissionSim",
+      "global": true
+    }
+  ],
+  "filters":[
+    {
+      "names": "filter/channel1",
+      "sourcetarget": "Controller_Thermal/channel1",
+      "mode": "source",
+      "operation": "delay",
+      "properties":
+      {
+        "name": "delay",
+        "value": 0.04
+      }
+    }
+  ],
   "publications": {
       "AGC_signal": {
         "pub_interval": 2,
