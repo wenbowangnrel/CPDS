@@ -57,10 +57,10 @@ for k, v in subscriptions.items():
     SUBSCRIPTIONS[k] = sub
 # register endpoints
 epid = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep", "")
-epid_filter = h.helicsFederateRegisterFilter(fed, "delay", "")
 # define pub and sub directly:
 
 h.helicsFederateEnterExecutingMode(fed)
+print(f"{federate_name}: Entering execution mode", flush=True)
 ################### Now start executation ###################
 
 current_time = 0
@@ -98,7 +98,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     #             h.helicsPublicationPublishVector(pub, list(PVD_AGC_response))
     print(f"current_time%2={current_time%2}")
     if current_time % 2 <= 1e-6:
-        h.helicsEndpointSendMessageRaw(epid, "TransmissionSim_ep2", json.dumps(PVD_AGC_response.tolist()))
+        h.helicsEndpointSendTo(epid, "TransmissionSim_ep2", json.dumps(PVD_AGC_response.tolist()))
         print(f"sending {PVD_AGC_response}")
 
 h.helicsFederateFinalize(fed)

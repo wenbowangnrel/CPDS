@@ -59,19 +59,29 @@ for k, v in subscriptions.items():
 # register endpoints
 epid = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep", "")
 
+filter1_id = h.helicsFederateRegisterFilter(fed, h.HELICS_FILTER_TYPE_CUSTOM, "filter1")
+h.helicsFilterAddDestinationTarget(filter1_id, "TransmissionSim_ep1")
+
+#h.helicsFilterSet(filter1_id, "delay", 0.1)
 
 # define pub and sub directly:
 
 h.helicsFederateEnterExecutingMode(fed)
+print(f"{federate_name}: Entering execution mode", flush=True)
+
 ################### Now start executation ###################
 
 current_time = 0
 paux0_new = np.zeros(num_TurbineGov)
 for request_time in np.arange(0, total_time, simulation_step_time):
     while current_time < request_time:
-
+        print('Before')
+        print(f"current_time={current_time}")
+        print(f"request_time={request_time}")
         current_time = h.helicsFederateRequestTime(fed, request_time)
-
+        print('After')
+        print(f"current_time={current_time}")
+        print(f"request_time={request_time}")
     print(f"current_time={current_time}")
 
     # get ACE results
@@ -103,7 +113,9 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     #             print(f"Sent AGC signal at time {current_time}: {paux0_new} {element_unit} from {element_name}.")
     #             h.helicsPublicationPublishVector(pub, list(paux0_new))
     if current_time % 2 <= 1e-6:
+        print(f"current_time % 2 = {current_time % 2}")
         h.helicsEndpointSendTo(epid, "TransmissionSim_ep1", json.dumps(paux0_new.tolist()))
+
         print(f"sending {paux0_new}")
 
 h.helicsFederateFinalize(fed)

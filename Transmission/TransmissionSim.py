@@ -144,6 +144,10 @@ for k, v in subscriptions.items():
 epid1 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep1", "")
 epid2 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep2", "")
 
+# filter_trans_id = h.helicsFederateRegisterFilter(fed, h.HELICS_FILTER_TYPE_DELAY, "filter1")
+# h.helicsFilterAddDestinationTarget(filter_trans_id, federate_name+"_ep")
+# h.helicsFilterSet(filter_trans_id, "delay", 0.1)
+
 ############### Entering Execution Mode ########################
 h.helicsFederateEnterExecutingMode(fed)
 print(f"{federate_name}: Entering execution mode", flush=True)
@@ -211,7 +215,8 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         #     ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
     while h.helicsEndpointHasMessage(epid1):
         m = h.helicsEndpointGetMessage(epid1)
-        print(m.data)
+        message_list = json.loads(m.data)
+        print(message_list)
         #print(json.loads(m))
         #print(m.data)
         #m = h.helicsEndpointGetMessageObject(epid1)
@@ -221,11 +226,12 @@ for request_time in np.arange(0, total_time, simulation_step_time):
 
     while h.helicsEndpointHasMessage(epid2):
         m = h.helicsEndpointGetMessage(epid2)
-        print(m.data)
-        print(type(m.data))
-
-        print(json.loads(m.data))
-        print(type(json.loads(m.data)))
+        message_list = json.loads(m.data)
+        # print(m.data)
+        # print(type(m.data))
+        #
+        # print(json.loads(m.data))
+        print(message_list)
         #m = h.helicsEndpointGetMessageObject(epid2)
         #message2 = h.helicsMessageGetString(m)
         #print(np.frombuffer(m))
