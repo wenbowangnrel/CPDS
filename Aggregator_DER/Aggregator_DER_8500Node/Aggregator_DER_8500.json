@@ -1,0 +1,35 @@
+{
+  "name": "Aggregator_DER",
+  "coreType": "zmq",
+  "core_init_string": "1",
+  "filename": "/path/to/file",
+  "loglevel": 5,
+  "period": 0.01,
+  "simulation_step_time": 1,
+  "total_time": 40,
+  "num_DER": 20,
+  "publications": {
+      "AGC_signal": {
+        "pub_interval": 2,
+        "element_name": "Aggregator",
+        "element_type": "",
+        "topic": "AGC_signal",
+        "type": "vector",
+        "value": "AGC",
+        "unit": "100_MW"
+    }
+  },
+  "subscriptions": {
+    "transmission_ACE": {
+      "element_name": "",
+      "element_type": "",
+      "sub_interval": 0.5,
+      "topic": "TransmissionSim/ACE",
+      "required": true,
+      "type": "double",
+      "unit": "100_MW",
+      "value": "ACE"
+    }
+  }
+
+}
