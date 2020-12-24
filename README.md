@@ -1,7 +1,7 @@
 # CPDS
 Cyber-Physical Dynamic System Modeling for Frequency Regulation and AGC Services of DES\
 PI: Xin Fang NREL
-### Env setup:
+### Env setup: install HELICS, Opendssdirect, etc.
 ```
 conda create --name oe36 python=3.6
 conda activate oe36
@@ -31,20 +31,20 @@ helics --verbose run --path runner.json
 ```
 Use conda to install the HELICS Python interface and apps:
 
-Ohter methods to install helics
+```
 conda install -c gmlc-tdc helics
-OR
+```
 
 Use pip to install the HELICS Python interface and apps:
-
+```
 pip install helics
 pip install helics-apps
-OR
+```
 
 Use Spack (requires Spack develop branch or versions released after v0.14.1) on HPC systems (Linux/macOS) to install C/C++ HELICS components and apps:
-
+```
 spack install helics
-
+```
 ### Results and figures
 
 Results are (for now) in the log files, a notebook file is created to read results.
