@@ -29,8 +29,8 @@ with open(filename) as f:
     total_time = data["total_time"]
     simulation_step_time = data["simulation_step_time"]
     num_TurbineGov = data["num_TurbineGov"]
-    subscriptions = data["subscriptions"]
-    publications = data["publications"]
+    # subscriptions = data["subscriptions"]
+    # publications = data["publications"]
     endpoints = data["endpoints"]
 print("reading json okay!")
 
@@ -50,17 +50,17 @@ fed = h.helicsCreateCombinationFederate(f"{federate_name}", fedinfo)
 print(f"{federate_name}: Combination federate created", flush=True)
 #import pdb;pdb.set_trace()
 # define pub and sub through json
-for k, v in publications.items():
-    pub = h.helicsFederateRegisterTypePublication(fed, v["topic"], v["type"], "")
-    PUBLICATIONS[k] = pub
-for k, v in subscriptions.items():
-    sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
-    SUBSCRIPTIONS[k] = sub
+# for k, v in publications.items():
+#     pub = h.helicsFederateRegisterTypePublication(fed, v["topic"], v["type"], "")
+#     PUBLICATIONS[k] = pub
+# for k, v in subscriptions.items():
+#     sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
+#     SUBSCRIPTIONS[k] = sub
 # register endpoints
 epid = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep", "")
 
-filter1_id = h.helicsFederateRegisterFilter(fed, h.HELICS_FILTER_TYPE_CUSTOM, "filter1")
-h.helicsFilterAddDestinationTarget(filter1_id, "TransmissionSim_ep1")
+# filter1_id = h.helicsFederateRegisterFilter(fed, h.HELICS_FILTER_TYPE_CUSTOM, "filter1")
+# h.helicsFilterAddDestinationTarget(filter1_id, "TransmissionSim_ep1")
 
 #h.helicsFilterSet(filter1_id, "delay", 0.1)
 
@@ -73,47 +73,27 @@ print(f"{federate_name}: Entering execution mode", flush=True)
 
 current_time = 0
 paux0_new = np.zeros(num_TurbineGov)
+KI=0.2
 for request_time in np.arange(0, total_time, simulation_step_time):
     while current_time < request_time:
-        print('Before')
-        print(f"current_time={current_time}")
-        print(f"request_time={request_time}")
         current_time = h.helicsFederateRequestTime(fed, request_time)
-        print('After')
-        print(f"current_time={current_time}")
-        print(f"request_time={request_time}")
     print(f"current_time={current_time}")
 
-    # get ACE results
-    # for key, sub in SUBSCRIPTIONS.items():
-    #     if subscriptions[key]['value'] == 'ACE':
-    #         #if current_time % subscriptions[key]['sub_interval']<=1e-6:
-    #         val = h.helicsInputGetDouble(sub)
-    #         val_unit = subscriptions[key]["unit"]
-    #         print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
-    #
-    #         if current_time == 0:
-    #             val = 0
-    #             val_unit = subscriptions[key]["unit"]
-    #             print(f"Manually set up first step ACE {val} {val_unit}.")
-    #
-    #         ##### use val (ACE) calculate AGC  ###########
-    #         if  current_time < 5:
-    #             paux0_new = paux0_new - val*0.02*0.196 # this is vector
-    #             print(f"paux0_new={paux0_new}")
-    #         else:
-    #             paux0_new = paux0_new - val*0.02*0.245 # this is vector
-    #             print(f"paux0_new={paux0_new}")
-    # get AGC published
-    # for key, pub in PUBLICATIONS.items():
-    #     if publications[key]['value'] == 'AGC':
-    #         element_unit = publications[key]['unit']
-    #         element_name = publications[key]['element_name']
-    #         if (10*current_time) % (10*publications[key]['pub_interval']) <= 1e-6:
-    #             print(f"Sent AGC signal at time {current_time}: {paux0_new} {element_unit} from {element_name}.")
-    #             h.helicsPublicationPublishVector(pub, list(paux0_new))
-    if current_time % 2 <= 1e-6:
-        print(f"current_time % 2 = {current_time % 2}")
+    # initialized ACE = 0
+    if current_time == 0:
+        ACE = 0
+
+    # check message from transmission (ACE is float)
+    while h.helicsEndpointHasMessage(epid):
+        m = h.helicsEndpointGetMessage(epid)
+        message = json.loads(m.data)
+        ACE = message
+        print(f"Received message at time {current_time}: ACE {ACE}")
+
+    paux0_new = paux0_new - ACE*simulation_step_time*0.18*KI
+    print(f"paux0_new={paux0_new}")
+
+    if current_time % 4 <= 1e-6:
         h.helicsEndpointSendTo(epid, "TransmissionSim_ep1", json.dumps(paux0_new.tolist()))
 
         print(f"sending {paux0_new}")

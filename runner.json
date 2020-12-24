@@ -14,10 +14,16 @@
       "name": "Controller_Thermal"
     },
     {
-      "directory": "./Aggregator_DER",
-      "exec": "python -u Aggregator_DER.py",
+      "directory": "./Aggregator_DER/Aggregator_DER_34Bus",
+      "exec": "python -u Aggregator_DER_34Bus.py",
       "host": "localhost",
-      "name": "Aggregator_DER"
+      "name": "Aggregator_DER_34Bus"
+    },
+    {
+      "directory": "./Aggregator_DER/Aggregator_DER_8500Node",
+      "exec": "python -u Aggregator_DER_8500Node.py",
+      "host": "localhost",
+      "name": "Aggregator_DER_8500Node"
     },
     {
       "directory": "./Distribution/34Bus",
@@ -32,5 +38,5 @@
       "name": "8500Node"
     }
   ],
-  "name": "CPDS-T-D-Cosimulation-HELICSRunner"
+  "name": "CPDS_Cosimulation_HELICSRunner"
 }

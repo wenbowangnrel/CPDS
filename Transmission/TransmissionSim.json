@@ -3,8 +3,9 @@
   "coreType": "zmq",
   "loglevel": 5,
   "name": "TransmissionSim",
-  "simulation_step_time": 0.02,
+  "simulation_step_time": 0.05,
   "period": 0.01,
+  "ACE_interval": 0.5,
   "publications": {
     "transmission_voltage/bus_4": {
       "pub_interval": 1,
@@ -29,26 +30,6 @@
       "value": "Voltage",
       "element_name": "9",
       "element_type": "Bus"
-    },
-    "transmission_ACE": {
-      "pub_interval": 0.1,
-      "type": "double",
-      "global": true,
-      "unit": "100_MW",
-      "topic": "TransmissionSim/ACE",
-      "value": "ACE",
-      "element_name": "Transmission",
-      "element_type": "System"
-    },
-    "transmission_f": {
-      "pub_interval": 0.1,
-      "type": "double",
-      "global": true,
-      "unit": "Hz",
-      "topic": "TransmissionSim/Frequency",
-      "value": "Frequency",
-      "element_name": "Transmission",
-      "element_type": "System"
     }
   },
   "step_time": 1,
@@ -70,22 +51,6 @@
       "value": "Powers",
       "element_name": "9",
       "bus_PQ_index": 5
-    },
-    "Controller": {
-      "type": "vector",
-      "required": true,
-      "sub_interval": 2,
-      "topic": "Controller_Thermal/AGC_signal",
-      "value": "AGC_signal_C",
-      "unit": "100_MW"
-    },
-    "Aggregator": {
-      "type": "vector",
-      "required": true,
-      "sub_interval": 2,
-      "topic": "Aggregator_DER/AGC_signal",
-      "value": "AGC_signal_A",
-      "unit": "100_MW"
     }
   },
   "uninterruptible": true

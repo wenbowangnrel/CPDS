@@ -45,7 +45,7 @@ print("reading json okay!")
 # load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
 
 consistent_random_object = np.random.RandomState(1234)
-load_profile_random = consistent_random_object.normal(1, 0.0, int(total_time/simulation_step_time))
+load_profile_random = consistent_random_object.normal(1, 0.0, int(total_time))
 
 
 # fig, ax1 = plt.subplots()
@@ -163,7 +163,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     for j in range(dss.Loads.Count()):
         loadname = dss.Loads.Name()
         # now calculate kw and kvar based on the csv
-        load_mult = load_profile_random[int(current_time/simulation_step_time)]
+        load_mult = load_profile_random[int(current_time)]
         loadkw_new = load_mult * loadkw_dict[loadname]
         loadkvar_new = load_mult * loadkvar_dict[loadname]
         # now change opendss load object

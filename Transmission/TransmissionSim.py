@@ -2,7 +2,7 @@
 """
 Transmission simulator using Andes
 """
-
+from datetime import datetime
 import cmath
 import json
 import math
@@ -21,11 +21,12 @@ import andes
 
 ##################### First define a broker for total cosim ###########################
 path_to_TransmissionSim = os.getcwd()
+path_to_results = os.path.join(os.getcwd(), "..", "Results_figures")
 
 helicsversion = h.helicsGetVersion()
 print("Helics version = {}".format(helicsversion))
 # start a broker inside the file
-brokerinitstring = "-f 5 --name=mainbroker" # 3 is the number of federates connecting
+brokerinitstring = "-f 6 --name=mainbroker" # 3 is the number of federates connecting
 
 # Create broker #
 broker = h.helicsCreateBroker("zmq", "", brokerinitstring)
@@ -44,6 +45,7 @@ with open(filename) as f:
     subscriptions = data["subscriptions"]
     publications = data["publications"]
     simulation_step_time = data["simulation_step_time"]
+    ACE_interval = data["ACE_interval"]
 print("reading json okay!")
 PUBLICATIONS = {}
 SUBSCRIPTIONS = {}
@@ -91,47 +93,38 @@ ss.PFlow.run()
 ss.TDS.init()
 
 #first run 0.1 to make sure everything runs well
-ss.TDS.config.tf = 0.01
+#ss.TDS.config.tf = 0.01
 
 # start the 0.1 second dynamic simulation
-ss.TDS.run()
+#ss.TDS.run()
 ss.dae.ts.y
 shed_buses = ss.PQ.bus.v
 pq_shed_idx = ss.PQ.find_idx(keys='bus', values=shed_buses)
 
 # define turbine gov AGC settings: find index and set value
 tg_idx = list(ss.TurbineGov._idx2model.keys())
-paux0_new_init = np.zeros(len(tg_idx))# - ss.ACEc.ace.v*1/len(tg_idx)
-ss.TurbineGov.set(src='paux0',idx=tg_idx, attr='v', value=paux0_new_init)
+paux0_new = np.zeros(len(tg_idx))# - ss.ACEc.ace.v*1/len(tg_idx)
+
+ss.TurbineGov.set(src='paux0',idx=tg_idx, attr='v', value=paux0_new)
 
 PVD_names = ss.PVD1.idx.v
 PVD_AGC_idx = ss.PVD1.find_idx(keys='idx', values=PVD_names)
 
 PVD_AGC_response = ss.PVD1.get(src='Pext', idx=PVD_AGC_idx, attr='v')
 PVD_AGC_response = np.zeros(len(PVD_AGC_idx))
-
-
-
-
+PVD_AGC_response1 = np.zeros(int(len(PVD_AGC_idx)/2))
+PVD_AGC_response2 = np.zeros(int(len(PVD_AGC_idx)/2))
 # record the initial system load
 pq_p = ss.PQ.get(src='Ppf', idx=pq_shed_idx, attr='v')
 
-
-
 # pq_p = array([0.217, 0.5  , 0.478, 0.076, 0.15 , 0.295, 0.09 , 0.035, 0.061,
 #        0.135, 0.2  ]
-
 # Sbase = 100 MW
-
 # dae: differential–algebraic equation
-
 # get the load time series randomly choose
 consistent_random_object = np.random.RandomState(123)
-Load_timeseries = consistent_random_object.normal(1, 0.0, int(total_time/simulation_step_time))
+load_timeseries = consistent_random_object.normal(1, 0.0, int(total_time/simulation_step_time))
 #Load_timeseries_df = pd.DataFrame(Load_timeseries)
-
-# ss.Bus.v.a = array([14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27])
-
 # register the publication
 for k, v in publications.items():
     pub = h.helicsFederateRegisterGlobalTypePublication(fed, v['topic'], v['type'], "") # register to helics
@@ -143,6 +136,7 @@ for k, v in subscriptions.items():
 
 epid1 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep1", "")
 epid2 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep2", "")
+epid3 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep3", "") # 
 
 # filter_trans_id = h.helicsFederateRegisterFilter(fed, h.HELICS_FILTER_TYPE_DELAY, "filter1")
 # h.helicsFilterAddDestinationTarget(filter_trans_id, federate_name+"_ep")
@@ -162,7 +156,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     print(f"request_time={request_time}")
     print(f"current_time={current_time}")
     # set power for all loads
-    pq_p_new = pq_p * Load_timeseries[int(current_time/simulation_step_time)]
+    pq_p_new = pq_p * load_timeseries[int(current_time/simulation_step_time)]
     ss.PQ.set(src='Ppf', idx=pq_shed_idx, attr='v', value=pq_p_new)
     # here set the power from distribution (bus index=4)
     for key, sub in SUBSCRIPTIONS.items():
@@ -186,63 +180,47 @@ for request_time in np.arange(0, total_time, simulation_step_time):
 
             ss.PQ.set(src='Ppf', idx=pq_shed_idx[int(bus_PQ_index)], attr='v', value=P) # set load as P
             #print(f"total_bus_load = {ss.PQ.p0.v}")
-        # if subscriptions[key]['value']=='AGC_signal_C':
-        #     #if current_time % subscriptions[key]['sub_interval']<=1e-6:
-        #     val = h.helicsInputGetVector(sub)
-        #     val_unit = subscriptions[key]['unit']
-        #     if current_time == 0:
-        #         val = paux0_new_init
-        #         val_unit = subscriptions[key]['unit']
-        #
-        #     # use val to adjust
-        #     print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
-        #
-        #     paux0_new = np.array(val)  # go to add pub ACE
-        #     ss.TurbineGov.set(src='paux0', idx=tg_idx, attr='v', value=paux0_new)
-        #
-        # if subscriptions[key]['value']=='AGC_signal_A':
-        #    # if current_time % subscriptions[key]['sub_interval']<=1e-6:
-        #     val = h.helicsInputGetVector(sub)
-        #     val_unit = subscriptions[key]['unit']
-        #     if current_time == 0:
-        #         val = PVD_AGC_response
-        #         val_unit = subscriptions[key]['unit']
-        #
-        #     # use val to adjust
-        #     print(f"Received {subscriptions[key]['value']} at time {current_time}: {val} {val_unit}.")
-        #
-        #     PVD_AGC_response = np.array(val)  # go to add pub ACE
-        #     ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
-    while h.helicsEndpointHasMessage(epid1):
+
+    while h.helicsEndpointHasMessage(epid1): # epid1 from thermal control
         m = h.helicsEndpointGetMessage(epid1)
-        message_list = json.loads(m.data)
-        print(message_list)
-        #print(json.loads(m))
-        #print(m.data)
-        #m = h.helicsEndpointGetMessageObject(epid1)
-        #message1 = h.helicsMessageGetString(m)
-        print("yes1")
-        #print(f"Receive {message1}")
+        message = json.loads(m.data)
+        paux0_new = message
+        print(f"type(message)={type(message)}")
+        print(f"Received paux0_new = {paux0_new} from thermal_controller at time {current_time}.")
 
     while h.helicsEndpointHasMessage(epid2):
         m = h.helicsEndpointGetMessage(epid2)
-        message_list = json.loads(m.data)
-        # print(m.data)
-        # print(type(m.data))
-        #
-        # print(json.loads(m.data))
-        print(message_list)
-        #m = h.helicsEndpointGetMessageObject(epid2)
-        #message2 = h.helicsMessageGetString(m)
-        #print(np.frombuffer(m))
-        print('yes2')
-        #print(f"m.data={m.data}")
-    # start the dynamic simulation
-    #print(f'current_time + simulation_step_time = {current_time+simulation_step_time}')
+        message = json.loads(m.data)
+        PVD_AGC_response1 = message
+        print(f"Received PVD_AGC_response1 = {PVD_AGC_response1} from Aggregator_DER_34Bus at time {current_time}.")
 
+    while h.helicsEndpointHasMessage(epid3):
+        m = h.helicsEndpointGetMessage(epid3)
+        message = json.loads(m.data)
+        PVD_AGC_response2 = message
+        print(f"Received PVD_AGC_response2 = {PVD_AGC_response2} from Aggregator_DER_8500Node at time {current_time}.")
+
+
+    ss.TurbineGov.set(src='paux0', idx=tg_idx, attr='v', value=paux0_new)
+    PVD_AGC_response = np.concatenate([PVD_AGC_response1, PVD_AGC_response2])
+    ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
+    # start the dynamic simulation
     ss.TDS.config.tf = current_time + simulation_step_time
     ss.TDS.run()
     # print(f"Bus_voltages = {ss.Bus.v.v}")
+    ACE = ss.ACEc.ace.v[0]
+    # every 0.5 s, set ACE signal through two endpoint
+    #if current_time % ACE_interval < 1e-4:
+    # send messages to Thermal controller
+    h.helicsEndpointSendTo(epid1, "Controller_Thermal_ep", json.dumps(ACE))
+    print(f'Sending to Controller_Thermal_ep at time {current_time}: ACE {ACE} 100 MW.')
+    # send messages to DER aggregator
+    h.helicsEndpointSendTo(epid1, "Aggregator_DER_34Bus_ep", json.dumps(ACE))
+    print(f'Sending to Aggregator_DER_34Bus_ep at time {current_time}: ACE {ACE} 100 MW.')
+    # send message to another DER aggregator
+    h.helicsEndpointSendTo(epid1, "Aggregator_DER_8500Node_ep", json.dumps(ACE))
+    print(f'Sending to Aggregator_DER_8500Node_ep at time {current_time}: ACE {ACE} 100 MW.')
+
 
     ## get the PUBLICATION OUT
     for key, pub in PUBLICATIONS.items():
@@ -258,35 +236,34 @@ for request_time in np.arange(0, total_time, simulation_step_time):
                 print("Sent voltage mag at time {}: {} pu from {} {}".format(current_time, val1, element_type, bus_name))
                 print("Sent voltage ang at time {}: {} rad from {} {}".format(current_time, val2, element_type, bus_name))
                 h.helicsPublicationPublishComplex(pub, val1, val2)
-        # get frequency and publish
-        # if publications[key]['value']=='Frequency':
-        #     element_unit = publications[key]['unit']
-        #     element_name = publications[key]['element_name']
-        #     frequency = ss.dae.ts.y[-1, ss.ACEc.f.a][0]*60
-        #     if (current_time*10) % (10*publications[key]['pub_interval'])<=1e-6:
-        #         print(f"Sent frequency at time {current_time}: {frequency} {element_unit} from {element_name}.")
-        #         h.helicsPublicationPublishDouble(pub, frequency)
-        # # get ACE and publish
-        # if publications[key]['value']=='ACE':
-        #     element_unit = publications[key]['unit']
-        #     element_name = publications[key]['element_name']
-        #     ACE = ss.ACEc.ace.v[0]
-        #     print(f"publications[key]['pub_interval']={publications[key]['pub_interval']}")
-        #     print(f"current_time % publications[key]['pub_interval']={current_time % publications[key]['pub_interval']}")
-        #     if (10*current_time) % (10*publications[key]['pub_interval'])<=1e-6:
-        #         print(f"Sent ACE at time {current_time}: {ACE} {element_unit} from {element_name}.")
-        #         h.helicsPublicationPublishDouble(pub, ACE)
 
     # if dynamic simulation can't converge, terminate the simulation
     if ss.exit_code != 0:
         raise ValueError(current_time)
 
+fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(8, 6))
+ax1.plot(ss.dae.ts.t, ss.dae.ts.get_data([ss.ACEc.f])*60)
+ax1.set_xlabel('Time (s)')
+ax1.set_ylabel('Frequency (Hz)')
 
+ax2.plot(ss.dae.ts.t, ss.dae.ts.get_data([ss.ACEc.ace])*100)
+ax2.set_xlabel('Time (s)')
+ax2.set_ylabel('ACE (MW)')
+
+ax3.plot(ss.dae.ts.t, ss.dae.ts.get_data([ss.Bus.v],a=[0,3,8,]))
+ax3.set_xlabel('Time (s)')
+ax3.set_ylabel('Voltage (pu)')
+
+#plt.show()
+now = datetime.now() # record the time
+append_time = now.strftime("%H_%M_%S")
+figure_name = "cosim_results_" + append_time + ".png"
+fig.savefig(os.path.join(path_to_results, figure_name), dpi=300)
 
 ss.TDS.load_plotter()
 print(ss.dae.ts.y.shape)
 #plot the system frequency
-ss.TDS.plt.plot(ss.ACEc.f, ytimes=60, ylabel='Frequency (Hz)')
+#ss.TDS.plt.plot(ss.ACEc.f, ytimes=60, ylabel='Frequency (Hz)')
 
 # #plot the system ACE
 #ss.TDS.plt.plot(ss.ACEc.ace, ytimes=100, ylabel='ACE (MW)')
