@@ -16,7 +16,7 @@ pip install -e .
 ```
 conda install andes
 ```
-### download the latest version of andes from GitHub repository and install from the local folder since the latest version hasn't been released. Using pip update can't include the latest code development in ANDES.
+Download the latest version of andes from GitHub repository and install from the local folder since the latest version hasn't been released. Using pip update can't include the latest code development in ANDES.
 
 
 ### install helics-cli
@@ -45,6 +45,16 @@ Use Spack (requires Spack develop branch or versions released after v0.14.1) on 
 
 spack install helics
 
-### Results
+### Results and figures
 
 Results are (for now) in the log files, a notebook file is created to read results.
+Figures are stored in the results_figure folder
+
+Install pulp for distribution voltage-power sensitivity matrix and optimization
+```
+pip install pulp
+```
+This is for ANDES dependences
+```
+pip install openpyxl
+```
