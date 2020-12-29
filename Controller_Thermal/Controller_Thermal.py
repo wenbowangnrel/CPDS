@@ -57,7 +57,7 @@ print(f"{federate_name}: Combination federate created", flush=True)
 #     sub = h.helicsFederateRegisterSubscription(fed, v["topic"], "")
 #     SUBSCRIPTIONS[k] = sub
 # register endpoints
-epid = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep", "")
+epid = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep", "") # receive ACE
 
 # filter1_id = h.helicsFederateRegisterFilter(fed, h.HELICS_FILTER_TYPE_CUSTOM, "filter1")
 # h.helicsFilterAddDestinationTarget(filter1_id, "TransmissionSim_ep1")
@@ -89,11 +89,15 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         message = json.loads(m.data)
         ACE = message
         print(f"Received message at time {current_time}: ACE {ACE}")
+    # TODO normal condition should be 0.18
+    paux0_new = paux0_new - ACE * simulation_step_time * 0.18 * KI
+    # if current_time <= 5:
+    #     paux0_new = paux0_new - ACE*simulation_step_time*0.18*KI
+    # else:
+    #     paux0_new = paux0_new - ACE * simulation_step_time * 0.225 * KI
 
-    paux0_new = paux0_new - ACE*simulation_step_time*0.18*KI
     print(f"paux0_new={paux0_new}")
-
-    if current_time % 4 <= 1e-6:
+    if current_time % 4 <= 1e-6: # it was 4 sec
         h.helicsEndpointSendTo(epid, "TransmissionSim_ep1", json.dumps(paux0_new.tolist()))
 
         print(f"sending {paux0_new}")

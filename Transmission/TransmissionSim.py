@@ -18,6 +18,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import andes
 
+start_time = time.time()
 
 ##################### First define a broker for total cosim ###########################
 path_to_TransmissionSim = os.getcwd()
@@ -114,16 +115,24 @@ PVD_AGC_response = ss.PVD1.get(src='Pext', idx=PVD_AGC_idx, attr='v')
 PVD_AGC_response = np.zeros(len(PVD_AGC_idx))
 PVD_AGC_response1 = np.zeros(int(len(PVD_AGC_idx)/2))
 PVD_AGC_response2 = np.zeros(int(len(PVD_AGC_idx)/2))
+DER_Pmax_34Bus_np = None
+DER_Pmax_8500Node_np = None
+
 # record the initial system load
 pq_p = ss.PQ.get(src='Ppf', idx=pq_shed_idx, attr='v')
-
+# record DER output: TODO
+#ss.dae.ts.get_data([ss.PVD1.Ipout_y],a=[1,])*ss.dae.ts.get_data([ss.PVD1.v],a=[1,])*100
+pvd1_current = ss.PVD1.Ipout_y.v
+pvd1_voltage = ss.PVD1.v.v
+pvd1_power = pvd1_current*pvd1_voltage # in 100 MW
+DER_caps = np.ones(20)*0.009
 # pq_p = array([0.217, 0.5  , 0.478, 0.076, 0.15 , 0.295, 0.09 , 0.035, 0.061,
 #        0.135, 0.2  ]
 # Sbase = 100 MW
 # dae: differential–algebraic equation
 # get the load time series randomly choose
 consistent_random_object = np.random.RandomState(123)
-load_timeseries = consistent_random_object.normal(1, 0.0, int(total_time/simulation_step_time))
+load_timeseries = consistent_random_object.normal(1, 0.02, int(total_time))
 #Load_timeseries_df = pd.DataFrame(Load_timeseries)
 # register the publication
 for k, v in publications.items():
@@ -136,7 +145,10 @@ for k, v in subscriptions.items():
 
 epid1 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep1", "")
 epid2 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep2", "")
-epid3 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep3", "") # 
+epid3 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep3", "") #
+epid4 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep4", "") # receive DER pmax from 34Bus
+epid5 = h.helicsFederateRegisterGlobalEndpoint(fed, federate_name+"_ep5", "") # receive DER pmax from 8500Node
+
 
 # filter_trans_id = h.helicsFederateRegisterFilter(fed, h.HELICS_FILTER_TYPE_DELAY, "filter1")
 # h.helicsFilterAddDestinationTarget(filter_trans_id, federate_name+"_ep")
@@ -147,7 +159,7 @@ h.helicsFederateEnterExecutingMode(fed)
 print(f"{federate_name}: Entering execution mode", flush=True)
 
 print(f"===========Start simulation==================")
-
+mppt=1
 current_time = 0
 for request_time in np.arange(0, total_time, simulation_step_time):
     while current_time < request_time:
@@ -156,7 +168,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     print(f"request_time={request_time}")
     print(f"current_time={current_time}")
     # set power for all loads
-    pq_p_new = pq_p * load_timeseries[int(current_time/simulation_step_time)]
+    pq_p_new = pq_p * load_timeseries[int(current_time)]
     ss.PQ.set(src='Ppf', idx=pq_shed_idx, attr='v', value=pq_p_new)
     # here set the power from distribution (bus index=4)
     for key, sub in SUBSCRIPTIONS.items():
@@ -185,7 +197,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         m = h.helicsEndpointGetMessage(epid1)
         message = json.loads(m.data)
         paux0_new = message
-        print(f"type(message)={type(message)}")
+        #print(f"type(message)={type(message)}")
         print(f"Received paux0_new = {paux0_new} from thermal_controller at time {current_time}.")
 
     while h.helicsEndpointHasMessage(epid2):
@@ -200,25 +212,61 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         PVD_AGC_response2 = message
         print(f"Received PVD_AGC_response2 = {PVD_AGC_response2} from Aggregator_DER_8500Node at time {current_time}.")
 
+    while h.helicsEndpointHasMessage(epid4):
+        m = h.helicsEndpointGetMessage(epid4)
+        message = json.loads(m.data)
+        DER_Pmax_34Bus = message
+        print(f"Received DER_Pmax_34Bus = {DER_Pmax_34Bus} from Aggregator_DER_34Bus at time {current_time}.")
+        DER_Pmax_34Bus_np = DER_Pmax_34Bus
+
+    while h.helicsEndpointHasMessage(epid5):
+        m = h.helicsEndpointGetMessage(epid5)
+        message = json.loads(m.data)
+        DER_Pmax_8500Node = message
+        print(f"Received DER_Pmax_8500Node = {DER_Pmax_8500Node} from Aggregator_DER_8500Node at time {current_time}.")
+        DER_Pmax_8500Node_np = DER_Pmax_8500Node
 
     ss.TurbineGov.set(src='paux0', idx=tg_idx, attr='v', value=paux0_new)
     PVD_AGC_response = np.concatenate([PVD_AGC_response1, PVD_AGC_response2])
+    if DER_Pmax_34Bus_np is not None and DER_Pmax_8500Node_np is not None:
+        PVD_vsm_max = np.concatenate([DER_Pmax_34Bus_np, DER_Pmax_8500Node_np])
+        PVD_mppt_new = np.minimum(DER_caps*mppt, PVD_vsm_max)
+        print(f"PVD_mppt_new={PVD_mppt_new}")
+        ss.PVD1.set(src='pmx', idx=PVD_AGC_idx, attr='v', value=PVD_mppt_new)
+    # the AGC response should stay below the Pmax: should set the andes varibles pmax for PVD1
+    print(f"PVD_AGC_response={PVD_AGC_response}")
+
     ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
     # start the dynamic simulation
     ss.TDS.config.tf = current_time + simulation_step_time
     ss.TDS.run()
     # print(f"Bus_voltages = {ss.Bus.v.v}")
     ACE = ss.ACEc.ace.v[0]
+    # get DER output
+    pvd1_current = ss.PVD1.Ipout_y.v
+    pvd1_voltage = ss.PVD1.v.v
+    pvd1_power = pvd1_current * pvd1_voltage # unit is 100 MW
+    pvd1_power_34Bus = pvd1_power[:10]
+    pvd1_power_8500Node = pvd1_power[10:]
+    # send power to the aggregator and feeders
+    h.helicsEndpointSendTo(epid4, "Aggregator_DER_34Bus_ep3", json.dumps(pvd1_power_34Bus.tolist()))
+    print(f'Sending to Aggregator_DER_34Bus_ep at time {current_time}: pvd1_power {pvd1_power_34Bus} 100 MW.')
+
+    h.helicsEndpointSendTo(epid5, "Aggregator_DER_8500Node_ep3", json.dumps(pvd1_power_8500Node.tolist()))
+    print(f'Sending to Aggregator_DER_8500Node_ep at time {current_time}: pvd1_power {pvd1_power_8500Node} 100 MW.')
+
+
+
     # every 0.5 s, set ACE signal through two endpoint
-    #if current_time % ACE_interval < 1e-4:
+    #if current_time % ACE_interval < 1e-4: # reciving end will control this
     # send messages to Thermal controller
     h.helicsEndpointSendTo(epid1, "Controller_Thermal_ep", json.dumps(ACE))
     print(f'Sending to Controller_Thermal_ep at time {current_time}: ACE {ACE} 100 MW.')
     # send messages to DER aggregator
-    h.helicsEndpointSendTo(epid1, "Aggregator_DER_34Bus_ep", json.dumps(ACE))
+    h.helicsEndpointSendTo(epid1, "Aggregator_DER_34Bus_ep1", json.dumps(ACE))
     print(f'Sending to Aggregator_DER_34Bus_ep at time {current_time}: ACE {ACE} 100 MW.')
     # send message to another DER aggregator
-    h.helicsEndpointSendTo(epid1, "Aggregator_DER_8500Node_ep", json.dumps(ACE))
+    h.helicsEndpointSendTo(epid1, "Aggregator_DER_8500Node_ep1", json.dumps(ACE))
     print(f'Sending to Aggregator_DER_8500Node_ep at time {current_time}: ACE {ACE} 100 MW.')
 
 
@@ -241,7 +289,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     if ss.exit_code != 0:
         raise ValueError(current_time)
 
-fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(8, 6))
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, ncols=1, figsize=(11, 9))
 ax1.plot(ss.dae.ts.t, ss.dae.ts.get_data([ss.ACEc.f])*60)
 ax1.set_xlabel('Time (s)')
 ax1.set_ylabel('Frequency (Hz)')
@@ -254,14 +302,17 @@ ax3.plot(ss.dae.ts.t, ss.dae.ts.get_data([ss.Bus.v],a=[0,3,8,]))
 ax3.set_xlabel('Time (s)')
 ax3.set_ylabel('Voltage (pu)')
 
+ax4.plot(ss.dae.ts.t, ss.dae.ts.get_data([ss.PVD1.Pext]*100,a=[0,]))
+ax4.set_xlabel('Time (s)')
+ax4.set_ylabel('PVD1 AGC signal (MW)')
 #plt.show()
 now = datetime.now() # record the time
-append_time = now.strftime("%H_%M_%S")
+append_time = now.strftime("%m_%d_%Y_%H_%M_%S")
 figure_name = "cosim_results_" + append_time + ".png"
 fig.savefig(os.path.join(path_to_results, figure_name), dpi=300)
 
-ss.TDS.load_plotter()
-print(ss.dae.ts.y.shape)
+#ss.TDS.load_plotter()
+#print(ss.dae.ts.y.shape)
 #plot the system frequency
 #ss.TDS.plt.plot(ss.ACEc.f, ytimes=60, ylabel='Frequency (Hz)')
 
@@ -296,9 +347,16 @@ print(y_object.shape)
 # np.savetxt(path_to_results + "\\dae_time.csv", dae_time, delimiter=",")
 # np.savetxt(path_to_results + "\\dae_frequency.csv", dae_frequency, delimiter=",")
 # np.savetxt(path_to_results + "\\dae_ACE.csv", dae_ACE, delimiter=",")
+end_time = time.time()
+time_passed = round(end_time-start_time,2) # in s
+time_passed_s = time_passed % 60
+time_passed_m = time_passed // 60
+print(f"**********************************************")
+print(f"Time passed {time_passed_m} min {time_passed_s} s.")
+print(f"**********************************************")
 
 h.helicsFederateFinalize(fed)
-print(f"{federate_name}: Federate finalized",flush=True)
+print(f"{federate_name}: Federate finalized", flush=True)
 
 h.helicsFederateFree(fed)
 h.helicsCloseLibrary()

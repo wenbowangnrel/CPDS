@@ -89,7 +89,8 @@ for ind in index_DERs:
     else:
         run_command(f"Edit Load.P_perturb bus1={nodename}")
     dss.Solution.ControlMode(-1) # set control mode off
-    dss.Solution.SolveNoControl()
+    #dss.Solution.SolveNoControl()
+    dss.Solution.Solve()
     # not get the voltage
     allbusmagpu = np.array(dss.Circuit.AllBusMagPu())
     # get the column of the sensitivity matrix for column i
@@ -136,59 +137,74 @@ ax2.set_title('Error in percent')
 ### start optimizing the DER output
 from pulp import *
 
-opt_model = LpProblem("get_pmax_for_DER", LpMaximize)
-#DER_cap = 100
-DER_cap = np.ones(num_DERs)*100
+def get_DER_local_limit(vsm, DER_caps, allbusmagpu_base):
+    """:cvar
+    input:
+        vsm: voltage sensitivity matrix
+        DER_cap: DER name plate capacity in kw as a np.array
 
-# prepare data structure
-set_x = range(0, num_DERs)
-set_v = range(0, num_nodes)
-low = {i: 0 for i in set_x}
-#DER_index = 87
-up = {i: DER_cap[i] for i in set_x}
-#up[tuple(index_DERs)] = DER_cap
+    maximize sum of DER output
+    constrains: local voltage constrain based vsm
+    output df contains each DER allowed kw output
+    """
 
-v_l_ANSI = 0.90
-v_u_ANSI = 1.05
 
-v_l = {i: v_l_ANSI - allbusmagpu_base[i] for i in set_v}
-v_u = {i: v_u_ANSI - allbusmagpu_base[i] for i in set_v}
+    opt_model = LpProblem("get_pmax_for_DER", LpMaximize)
 
-# define x decision varibles: cat = LpContinuous, LpInteger
-x_vars = {i: LpVariable(cat = LpContinuous, lowBound=low[i], upBound=up[i], name="x_{}".format(i)) \
-          for i in set_x}
-# define <= constraints
-constraints = {i: opt_model.addConstraint(LpConstraint(\
-    e=lpSum(vsm[i, j]*x_vars[j] for j in set_x), \
-    sense=LpConstraintLE, \
-    rhs = v_u[i],\
-    name="constraint_v_u{}".format(i)))\
-    for i in set_v}
-# define >= constraints
-constraints = {i: opt_model.addConstraint(LpConstraint(\
-    e=lpSum(vsm[i, j]*x_vars[j] for j in set_x), \
-    sense=LpConstraintGE, \
-    rhs = v_l[i],\
-    name="constraint_v_l{}".format(i)))\
-    for i in set_v}
-# define objective
-objective = lpSum(x_vars[i] for i in set_x)
-#opt_model.sense = LpMaximize
-opt_model.setObjective(objective)
+    #DER_cap = np.ones(num_DERs)*100
 
-# solving with CBC
-opt_model.solve()
-print("=====> Status:", LpStatus[opt_model.status])
-if opt_model.status!=1:
-    raise NameError('***** Optimization not solved! *****')
+    # prepare data structure
+    num_nodes = vsm.shape[0]
+    num_DERs = len(DER_caps)
+    set_x = range(0, num_DERs)
+    set_v = range(0, num_nodes)
+    low = {i: 0 for i in set_x}
+    #DER_index = 87
+    up = {i: DER_cap[i] for i in set_x}
+    #up[tuple(index_DERs)] = DER_cap
 
-opt_df = pd.DataFrame.from_dict(x_vars, orient="index", columns = ["variable_object"])
-opt_df["solution_value"] = opt_df["variable_object"].apply(lambda item: item.varValue)
+    v_l_ANSI = 0.90
+    v_u_ANSI = 1.05
 
-obj_value = value(opt_model.objective)
-print("The total P max of DER is {}".format(round(obj_value,2)))
+    v_l = {i: v_l_ANSI - allbusmagpu_base[i] for i in set_v}
+    v_u = {i: v_u_ANSI - allbusmagpu_base[i] for i in set_v}
 
-print("End of script")
+    # define x decision varibles: cat = LpContinuous, LpInteger
+    x_vars = {i: LpVariable(cat = LpContinuous, lowBound=low[i], upBound=up[i], name="x_{}".format(i)) \
+            for i in set_x}
+    # define <= constraints
+    constraints = {i: opt_model.addConstraint(LpConstraint(\
+        e=lpSum(vsm[i, j]*x_vars[j] for j in set_x), \
+        sense=LpConstraintLE, \
+        rhs = v_u[i],\
+        name="constraint_v_u{}".format(i)))\
+        for i in set_v}
+    # define >= constraints
+    constraints = {i: opt_model.addConstraint(LpConstraint(\
+        e=lpSum(vsm[i, j]*x_vars[j] for j in set_x), \
+        sense=LpConstraintGE, \
+        rhs = v_l[i],\
+        name="constraint_v_l{}".format(i)))\
+        for i in set_v}
+    # define objective
+    objective = lpSum(x_vars[i] for i in set_x)
+    #opt_model.sense = LpMaximize
+    opt_model.setObjective(objective)
+
+    # solving with CBC
+    opt_model.solve()
+    print("=====> Status:", LpStatus[opt_model.status])
+    if opt_model.status!=1:
+        raise NameError('***** Optimization not solved! *****')
+
+    opt_df = pd.DataFrame.from_dict(x_vars, orient="index", columns = ["variable_object"])
+    opt_df["solution_value"] = opt_df["variable_object"].apply(lambda item: item.varValue)
+
+    obj_value = value(opt_model.objective)
+    print("The total P max of DER is {}".format(round(obj_value,2)))
+
+    return (opt_df, obj_value)
+    print("End of script")
 # simple test
 x_test = np.zeros(num_DERs)
 x_test = np.array(opt_df['solution_value'])

@@ -1,9 +1,9 @@
 {
-  "total_time": 40,
+  "total_time": 60,
   "coreType": "zmq",
   "loglevel": 5,
   "name": "TransmissionSim",
-  "simulation_step_time": 0.05,
+  "simulation_step_time": 0.5,
   "period": 0.01,
   "ACE_interval": 0.5,
   "publications": {
