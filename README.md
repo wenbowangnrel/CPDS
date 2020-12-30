@@ -58,3 +58,9 @@ This is for ANDES dependences
 ```
 pip install openpyxl
 ```
+Check helics version
+```
+python
+import helics as h
+h.__version__
+```
