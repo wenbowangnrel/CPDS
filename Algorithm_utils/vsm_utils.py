@@ -36,6 +36,7 @@ def get_vsm(dss, feeder_name, index_DERs, allbusmagpu_base):
     allnodenames = dss.Circuit.AllNodeNames()
     num_DERs = index_DERs.shape[0]
     num_nodes = len(allnodenames)
+    allloadnames = dss.Loads.AllNames()
 
     vsm = np.zeros([num_nodes, num_DERs])
     #allbusmagpu_base = np.load('temp_v'+'_'+feeder_name+'.npz')['arr_0']
@@ -50,7 +51,7 @@ def get_vsm(dss, feeder_name, index_DERs, allbusmagpu_base):
         dss.Circuit.SetActiveBus(nodename)
         buskv = dss.Bus.kVBase()
         #print(f'buskv={buskv} at node {nodename}') #note that these are all 1 phases
-        if i==0:
+        if 'p_perturb' not in allloadnames:
             run_command(f'New Load.P_perturb bus1={nodename} Phases=1 Conn=Wye Model=1 kv={buskv} kw={delta_p} kvar=0')
         else:
             run_command(f"Edit Load.P_perturb bus1={nodename}")
