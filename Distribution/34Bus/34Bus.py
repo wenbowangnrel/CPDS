@@ -94,7 +94,7 @@ allnodenames = dss.Circuit.AllNodeNames()
 num_nodes = len(allnodenames)
 
 print(f"Total power base line is {dss.Circuit.TotalPower()}")
-
+print(f"allloadnames={dss.Loads.AllNames()}")
 ################### create the federate info object ##################
 
 PUBLICATIONS = {}

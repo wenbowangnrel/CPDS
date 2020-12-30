@@ -38,6 +38,7 @@ def get_vsm(dss, feeder_name, index_DERs, allbusmagpu_base):
     num_nodes = len(allnodenames)
     allloadnames = dss.Loads.AllNames()
 
+    #print(f"In VSM function: allloadnames={allloadnames}")
     vsm = np.zeros([num_nodes, num_DERs])
     #allbusmagpu_base = np.load('temp_v'+'_'+feeder_name+'.npz')['arr_0']
     #print(f'Base min voltage is {np.min(allbusmagpu_base)}')
@@ -50,6 +51,7 @@ def get_vsm(dss, feeder_name, index_DERs, allbusmagpu_base):
         #buskv = float(run_command(f"? bus.{nodename.split('.')[0]}.kv"))
         dss.Circuit.SetActiveBus(nodename)
         buskv = dss.Bus.kVBase()
+        allloadnames = dss.Loads.AllNames()
         #print(f'buskv={buskv} at node {nodename}') #note that these are all 1 phases
         if 'p_perturb' not in allloadnames:
             run_command(f'New Load.P_perturb bus1={nodename} Phases=1 Conn=Wye Model=1 kv={buskv} kw={delta_p} kvar=0')

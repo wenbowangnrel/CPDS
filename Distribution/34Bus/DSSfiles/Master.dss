@@ -166,7 +166,7 @@ New Load.D844_846rc Bus1=846.3 Phases=1 Conn=Wye   Model=1 kV= 14.376 kW=  10.0 
 
 New Load.D846_848sb Bus1=846.2 Phases=1 Conn=Wye   Model=1 kV= 14.376 kW=  11.5 kVAR=   5.5
 New Load.D846_848rb Bus1=848.2 Phases=1 Conn=Wye   Model=1 kV= 14.376 kW=  11.5 kVAR=   5.5
-!New load.P_perturb bus1 = 852.1 Phases=1 Conn=Wye Model=1 kV = 14.376 kw=323 kvar=0
+
 
 ! let the DSS estimate voltage bases automatically
 Set VoltageBases = "69,24.9,4.16, .48"
