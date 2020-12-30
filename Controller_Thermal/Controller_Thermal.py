@@ -98,7 +98,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
 
     print(f"paux0_new={paux0_new}")
     if current_time % 4 <= 1e-6: # it was 4 sec
-        h.helicsEndpointSendTo(epid, "TransmissionSim_ep1", json.dumps(paux0_new.tolist()))
+        h.helicsEndpointSendBytesTo(epid, json.dumps(paux0_new.tolist()), "TransmissionSim_ep1")
 
         print(f"sending {paux0_new}")
 

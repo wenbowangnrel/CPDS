@@ -193,7 +193,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         print("***************************************")
 
         # send vsm to aggregator
-        h.helicsEndpointSendTo(epid, "Aggregator_DER_34Bus_ep2", json.dumps([vsm.tolist(), allbusmagpu_base.tolist()]))
+        h.helicsEndpointSendBytesTo(epid, json.dumps([vsm.tolist(), allbusmagpu_base.tolist()]), "Aggregator_DER_34Bus_ep2")
         print(f'Sending vsm to Aggregator_DER_34Bus_ep2 at time {current_time}: showing a block of vsm {vsm[index_DERs,:]}')
 
     # send this vsm and v_base to aggregator

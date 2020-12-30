@@ -249,10 +249,10 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     pvd1_power_34Bus = pvd1_power[:10]
     pvd1_power_8500Node = pvd1_power[10:]
     # send power to the aggregator and feeders
-    h.helicsEndpointSendTo(epid4, "Aggregator_DER_34Bus_ep3", json.dumps(pvd1_power_34Bus.tolist()))
+    h.helicsEndpointSendBytesTo(epid4, json.dumps(pvd1_power_34Bus.tolist()), "Aggregator_DER_34Bus_ep3")
     print(f'Sending to Aggregator_DER_34Bus_ep at time {current_time}: pvd1_power {pvd1_power_34Bus} 100 MW.')
 
-    h.helicsEndpointSendTo(epid5, "Aggregator_DER_8500Node_ep3", json.dumps(pvd1_power_8500Node.tolist()))
+    h.helicsEndpointSendBytesTo(epid5, json.dumps(pvd1_power_8500Node.tolist()), "Aggregator_DER_8500Node_ep3")
     print(f'Sending to Aggregator_DER_8500Node_ep at time {current_time}: pvd1_power {pvd1_power_8500Node} 100 MW.')
 
 
@@ -260,13 +260,13 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     # every 0.5 s, set ACE signal through two endpoint
     #if current_time % ACE_interval < 1e-4: # reciving end will control this
     # send messages to Thermal controller
-    h.helicsEndpointSendTo(epid1, "Controller_Thermal_ep", json.dumps(ACE))
+    h.helicsEndpointSendBytesTo(epid1, json.dumps(ACE), "Controller_Thermal_ep")
     print(f'Sending to Controller_Thermal_ep at time {current_time}: ACE {ACE} 100 MW.')
     # send messages to DER aggregator
-    h.helicsEndpointSendTo(epid1, "Aggregator_DER_34Bus_ep1", json.dumps(ACE))
+    h.helicsEndpointSendBytesTo(epid1, json.dumps(ACE), "Aggregator_DER_34Bus_ep1")
     print(f'Sending to Aggregator_DER_34Bus_ep at time {current_time}: ACE {ACE} 100 MW.')
     # send message to another DER aggregator
-    h.helicsEndpointSendTo(epid1, "Aggregator_DER_8500Node_ep1", json.dumps(ACE))
+    h.helicsEndpointSendBytesTo(epid1, json.dumps(ACE), "Aggregator_DER_8500Node_ep1")
     print(f'Sending to Aggregator_DER_8500Node_ep at time {current_time}: ACE {ACE} 100 MW.')
 
 

@@ -107,7 +107,7 @@ for request_time in np.arange(0, total_time, simulation_step_time): # simulation
         pvd1_power = np.array(message)*1e5/scale
         print(f"Received message at time {current_time}: pvd1_power {message} 100 MW")
 
-    h.helicsEndpointSendTo(epid2, "34Bus_ep", json.dumps(pvd1_power.tolist()))
+    h.helicsEndpointSendBytesTo(epid2, json.dumps(pvd1_power.tolist()), "34Bus_ep")
     print(f"sending pvd1_power={pvd1_power} in kw to feeder 34Bus.")
 
     ##### use ACE calculate PVD AGC 1 ###########
@@ -116,7 +116,7 @@ for request_time in np.arange(0, total_time, simulation_step_time): # simulation
 
 
     if current_time % 4 <= 1e-6: # it was 4 sec
-        h.helicsEndpointSendTo(epid1, "TransmissionSim_ep2", json.dumps(PVD_AGC_response.tolist()))
+        h.helicsEndpointSendBytesTo(epid1, json.dumps(PVD_AGC_response.tolist()), "TransmissionSim_ep2")
         print(f"sending PVD_AGC_response_34Bus={PVD_AGC_response}")
 
     if current_time % 10 <= 1e-6: # can be 60s interval get_DER_local_limit
@@ -127,7 +127,7 @@ for request_time in np.arange(0, total_time, simulation_step_time): # simulation
             print(f"DER_limit_df={DER_headroom_df}")
             total_DER_power_limit = pvd1_power + np.array(DER_headroom_df.solution_value)
             # this DER_limit_df*scale should be sent to Transmission
-            h.helicsEndpointSendTo(epid3, "TransmissionSim_ep4", json.dumps((total_DER_power_limit*scale/1e5).tolist()))
+            h.helicsEndpointSendBytesTo(epid3, json.dumps((total_DER_power_limit*scale/1e5).tolist()), "TransmissionSim_ep4")
             print(f"sending total_DER_power_limit={total_DER_power_limit}")
 
 
