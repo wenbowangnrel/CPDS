@@ -160,10 +160,22 @@ print(f"{federate_name}: Entering execution mode", flush=True)
 
 print(f"===========Start simulation==================")
 mppt=1
+#
+consistent_random_object_mppt = np.random.RandomState(687)
+mppt_timeseries = consistent_random_object_mppt.normal(0.55, 0.05, [int(total_time), 20])
+mppt_current_all = []
+mppt_current = np.ones(20)
 current_time = 0
+PVD_vsm_max_all = []
+PVD_vsm_max = np.ones(20)*0.009
+pvd1_power_all = []
+pvd1_power = np.ones(20)*0.005
+
+time_list = []
 for request_time in np.arange(0, total_time, simulation_step_time):
     while current_time < request_time:
         current_time = h.helicsFederateRequestTime(fed, request_time)
+    time_list.append(current_time)
     print("=============================")
     print(f"request_time={request_time}")
     print(f"current_time={current_time}")
@@ -228,24 +240,44 @@ for request_time in np.arange(0, total_time, simulation_step_time):
 
     ss.TurbineGov.set(src='paux0', idx=tg_idx, attr='v', value=paux0_new)
     PVD_AGC_response = np.concatenate([PVD_AGC_response1, PVD_AGC_response2])
+    mppt_current = mppt_timeseries[int(current_time), :]
     if DER_Pmax_34Bus_np is not None and DER_Pmax_8500Node_np is not None:
         PVD_vsm_max = np.concatenate([DER_Pmax_34Bus_np, DER_Pmax_8500Node_np])
-        PVD_mppt_new = np.minimum(DER_caps*mppt, PVD_vsm_max)
-        print(f"PVD_mppt_new={PVD_mppt_new}")
-        ss.PVD1.set(src='pmx', idx=PVD_AGC_idx, attr='v', value=PVD_mppt_new)
+        #mppt_current = mppt_timeseries[int(current_time),:]
+
+
+    PVD_mppt_new = np.minimum(DER_caps*mppt_current, PVD_vsm_max)
+    print(f"DER_caps*mppt_current={DER_caps*mppt_current}")
+    print(f"PVD_vsm_max = {PVD_vsm_max}")
+    if (PVD_mppt_new <= DER_caps*mppt_current).all() and (PVD_mppt_new <= PVD_vsm_max).all():
+        print('the minimum is correct!')
+    else:
+        print('the minimum is wrong!')
+
+    print(f"PVD_mppt_new={PVD_mppt_new}")
+    ss.PVD1.set(src='pmx', idx=PVD_AGC_idx, attr='v', value=PVD_mppt_new)
     # the AGC response should stay below the Pmax: should set the andes varibles pmax for PVD1
     print(f"PVD_AGC_response={PVD_AGC_response}")
 
     ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
     # start the dynamic simulation
+    print(f"ss.PVD1.pmx.v={ss.PVD1.pmx.v}")
     ss.TDS.config.tf = current_time + simulation_step_time
     ss.TDS.run()
     # print(f"Bus_voltages = {ss.Bus.v.v}")
     ACE = ss.ACEc.ace.v[0]
+    print(f"ss.ACEc.ace.v={ss.ACEc.ace.v}")
     # get DER output
     pvd1_current = ss.PVD1.Ipout_y.v
     pvd1_voltage = ss.PVD1.v.v
     pvd1_power = pvd1_current * pvd1_voltage # unit is 100 MW
+    print(f"pvd1_power={pvd1_power}")
+    if (pvd1_power <= PVD_mppt_new).all():
+        print('The output power is correct')
+    else:
+        print('The output power is wrong')
+
+
     pvd1_power_34Bus = pvd1_power[:10]
     pvd1_power_8500Node = pvd1_power[10:]
     # send power to the aggregator and feeders
@@ -255,8 +287,9 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     h.helicsEndpointSendBytesTo(epid5, json.dumps(pvd1_power_8500Node.tolist()), "Aggregator_DER_8500Node_ep3")
     print(f'Sending to Aggregator_DER_8500Node_ep at time {current_time}: pvd1_power {pvd1_power_8500Node} 100 MW.')
 
-
-
+    pvd1_power_all.append(pvd1_power)
+    mppt_current_all.append(mppt_current)
+    PVD_vsm_max_all.append(PVD_vsm_max)
     # every 0.5 s, set ACE signal through two endpoint
     #if current_time % ACE_interval < 1e-4: # reciving end will control this
     # send messages to Thermal controller
@@ -333,6 +366,50 @@ voltage_PQ_3 = ss.dae.ts.y[:, ss.Bus.v.a[3]]
 dae_time = ss.dae.ts.t
 dae_frequency = ss.dae.ts.y[:, ss.ACEc.f.a]*60
 dae_ACE = ss.dae.ts.y[:, ss.ACEc.ace.a]*100
+
+
+allbusindex = ss.Bus.v.a
+
+freq_ACE_np = np.hstack([dae_time.reshape(dae_time.shape[0],1),dae_frequency, dae_ACE])
+
+voltage_all_np = np.hstack([dae_time.reshape(dae_time.shape[0],1), voltage_all])
+
+freq_ACE_df = pd.DataFrame(freq_ACE_np, columns=['time_s','frequency_Hz','ACE_MW'])
+voltage_all_df = pd.DataFrame(voltage_all_np, columns = ['time_s']+ list(allbusindex.astype(str)))
+
+time_list_np = np.array(time_list).reshape(len(time_list),1)
+
+print(f"type(mppt_current_all)")
+mppt_current_all_np = np.array(mppt_current_all)
+print(f"shape={mppt_current_all_np.shape}")
+
+mppt_np = np.hstack([time_list_np, \
+                        np.array(mppt_current_all)])
+
+mppt_df = pd.DataFrame(mppt_np, columns = ['time_s']+ list(np.array(range(0,20)).astype(str)))
+
+PVD_vsm_max_np = np.hstack([time_list_np, \
+                        np.array(PVD_vsm_max_all)])
+
+PVD_vsm_max_df = pd.DataFrame(PVD_vsm_max_np, columns = ['time_s']+ list(np.array(range(0,20)).astype(str)))
+
+
+pvd1_power_np = np.hstack([time_list_np, \
+                        np.array(pvd1_power_all)])
+
+pvd1_power_df = pd.DataFrame(pvd1_power_np, columns = ['time_s']+ list(np.array(range(0,20)).astype(str)))
+
+
+
+# save two dataframe
+path_to_numerical_results = os.path.join(path_to_TransmissionSim,'simulation_results')
+freq_ACE_df.to_csv(path_to_numerical_results + "\\freq_ACE_df_"+append_time+".csv")
+voltage_all_df.to_csv(path_to_numerical_results + "\\voltage_all_df_"+append_time+".csv")
+mppt_df.to_csv(path_to_numerical_results + "\\mppt_df_"+append_time+".csv")
+PVD_vsm_max_df.to_csv(path_to_numerical_results + "\\PVD_vsm_max_df_"+append_time+".csv")
+pvd1_power_df.to_csv(path_to_numerical_results + "\\pvd1_power_df_"+append_time+".csv")
+
+# vsm, mppt, power output
 
 print(y_object.shape)
 # path_to_results = "simulation_results"

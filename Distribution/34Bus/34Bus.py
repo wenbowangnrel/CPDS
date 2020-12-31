@@ -2,6 +2,7 @@
 """
 34Bus test feeder simulator
 """
+from datetime import datetime
 import cmath
 import json
 import math
@@ -232,8 +233,14 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         run_command('edit load.{ln} kw={kw}'.format(ln=loadname, kw=loadkw_new))
         run_command('edit load.{ln} kvar={kw}'.format(ln=loadname, kw=loadkvar_new))
         dss.Loads.Next()
+
+now = datetime.now() # record the time
+append_time = now.strftime("%m_%d_%Y_%H_%M_%S")
+
 voltage_results = pd.DataFrame(allbusmagpu_ts, columns=allnodenames)
-#voltage_results.to_csv(dir_to_feeder+'\\voltage_results.csv')
+dir_to_results = os.path.join(dir_to_feeder, "simulation_results")
+voltage_results.to_csv(dir_to_results+'\\voltage_results_'+append_time+'.csv')
+
 
 h.helicsFederateFinalize(fed)
 

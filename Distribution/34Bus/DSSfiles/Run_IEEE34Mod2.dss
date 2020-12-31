@@ -18,7 +18,7 @@ show currents residual=y elements
 show powers kva element
 show taps
 
-Set MarkTransformers=yes
+!Set MarkTransformers=yes
 // let OpenDSS compute coordinates for the mid points (not in the buscoords file)
 Interpolate  ! requires an energyMeter
 plot circuit Power max=2000 y y C1=$00FF0000

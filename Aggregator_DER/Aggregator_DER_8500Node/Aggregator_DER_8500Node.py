@@ -2,6 +2,7 @@
 """
 Controller simulator
 """
+from datetime import datetime
 import cmath
 import json
 import math
@@ -72,6 +73,9 @@ num_nodes = 8531
 index_DERs = np.array([19, 291, 292, 293, 712, 713, 714, 1419, 1420, 1421])
 pvd1_power = np.ones(10)*500/scale # initialize pvd1_power
 KI=0.2
+time_list = []
+DER_local_limit_from_vsm_list = []
+total_DER_power_limit = 0
 for request_time in np.arange(0, total_time, simulation_step_time):
     while current_time < request_time:
 
@@ -128,8 +132,16 @@ for request_time in np.arange(0, total_time, simulation_step_time):
             h.helicsEndpointSendBytesTo(epid3, json.dumps((total_DER_power_limit*scale/1e5).tolist()), "TransmissionSim_ep5")
             print(f"sending total_DER_power_limit={total_DER_power_limit}")
 
+    DER_local_limit_from_vsm_list.append(total_DER_power_limit)
 
+DER_local_limit_from_vsm_df = pd.DataFrame()
+DER_local_limit_from_vsm_df['time_s']=time_list
+DER_local_limit_from_vsm_df['DER_local_limit_from_vsm'] =DER_local_limit_from_vsm_list
 
+now = datetime.now() # record the time
+append_time = now.strftime("%m_%d_%Y_%H_%M_%S")
+dir_to_results = os.path.join(dir_to_Controller, "simulation_results")
+DER_local_limit_from_vsm_df.to_csv(dir_to_results+'\\DER_local_limit_from_vsm_df_'+append_time+'.csv')
 
 
 h.helicsFederateFinalize(fed)
