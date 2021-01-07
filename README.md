@@ -65,3 +65,8 @@ import helics as h
 h.__version__
 ```
 ### NOTES: DON'T UPDATE HELICS
+### Hard pull in git
+```
+git reset --hard origin/master
+git fetch --all
+```
