@@ -1,3 +1,8 @@
 ################### ignore the files ##############
 *.log
 Results_figures/*.png
+Aggregator_DER/Aggregator_DER_34Bus/simulation_results/*.csv
+Aggregator_DER/Aggregator_DER_8500Node/simulation_results/*.csv
+Distribution/34Bus/simulation_results/*.csv
+Distribution/8500Node/simulation_results/*.csv
+Transmission/simulation_results/*.csv

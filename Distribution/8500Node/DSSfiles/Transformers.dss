@@ -17,6 +17,6 @@ New Transformer.FEEDER_REGB phases=1  windings=2  buses=(regxfmr_HVMV_Sub_LSB.2,
 New Transformer.FEEDER_REGC phases=1  windings=2  buses=(regxfmr_HVMV_Sub_LSB.3,  _HVMV_Sub_LSB.3)  conns=(wye, wye)  kvs=(7.2, 7.2)  kvas=(39600, 39600)  xhl=0.1 %loadloss=.001 wdg=2 Maxtap=1.1 Mintap=0.9 ppm=0
 
 ! Voltage regulator controls
-New RegControl.FEEDER_REGA transformer=FEEDER_REGA  winding=2 vreg=126.5  ptratio=60 band=2 
-New RegControl.FEEDER_REGB transformer=FEEDER_REGB  winding=2 vreg=126.5  ptratio=60 band=2 
-New RegControl.FEEDER_REGC transformer=FEEDER_REGC  winding=2 vreg=126.5  ptratio=60 band=2 
+New RegControl.FEEDER_REGA transformer=FEEDER_REGA  winding=2 vreg=123  ptratio=60 band=2 delay=5
+New RegControl.FEEDER_REGB transformer=FEEDER_REGB  winding=2 vreg=123  ptratio=60 band=2 delay=5
+New RegControl.FEEDER_REGC transformer=FEEDER_REGC  winding=2 vreg=123  ptratio=60 band=2 delay=5

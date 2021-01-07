@@ -90,11 +90,11 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         ACE = message
         print(f"Received message at time {current_time}: ACE {ACE}")
     # TODO normal condition should be 0.18
-    paux0_new = paux0_new - ACE * simulation_step_time * 0.18 * KI
-    # if current_time <= 5:
-    #     paux0_new = paux0_new - ACE*simulation_step_time*0.18*KI
-    # else:
-    #     paux0_new = paux0_new - ACE * simulation_step_time * 0.225 * KI
+    #paux0_new = paux0_new - ACE * simulation_step_time * 0.18 * KI
+    if current_time <= 5:
+        paux0_new = paux0_new - ACE*simulation_step_time*0.18*KI
+    else:
+        paux0_new = paux0_new - ACE * simulation_step_time * 0.225 * KI
 
     print(f"paux0_new={paux0_new}")
     if current_time % 4 <= 1e-6: # it was 4 sec

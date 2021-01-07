@@ -65,7 +65,7 @@ print(f"{federate_name}: Entering execution mode", flush=True)
 vsm = None
 allbusmagpu_base = None
 
-scale = 0.478*100/2.032 # 23.5
+scale = 0.478*100/0.970657 # 23.5
 DER_caps = np.ones(num_DER)*900/scale # in kw
 
 current_time = 0

@@ -70,7 +70,7 @@ ss.PFlow.run()
 ss.TDS.init()
 
 #first run 0.1 to make sure everything runs well
-ss.TDS.config.tf = 1
+ss.TDS.config.tf = 10
 
 # start the 0.1 second dynamic simulation
 ss.TDS.run()

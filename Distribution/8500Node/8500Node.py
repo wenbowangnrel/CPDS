@@ -68,7 +68,10 @@ else:
     print('------ Opendss failed ----')
     print(f'Error is "{dss.Text.Result()}"!')
 print(f"After opendss run os.getcwd()={os.getcwd()}")
-
+run_command("BatchEdit Load..* Vminpu=0.9")
+run_command("set mode=yearly number=60 stepsize=1s")
+dss.Solution.ControlMode(2)
+print(f"dss.Solution.Mode()={dss.Solution.Mode()}")
 # get load kw values
 BASEKV = dss.Vsources.BasekV()
 loadname_all=[]
@@ -125,7 +128,7 @@ totalpower_ts = []
 #index_DERs = np.arange(num_nodes-10, num_nodes, 1) # attach DER to the last 10 nodes
 index_DERs = np.array([19, 291, 292, 293, 712, 713, 714, 1419, 1420, 1421])
 # here define DER power output=500
-scale = 0.295*100/11.96
+scale = 0.295*100/5.72987
 DER_output = np.ones(10)*500
 i=1
 for ind in index_DERs:
@@ -153,7 +156,9 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         run_command(f'Edit generator.der_{j} kw={DER_output[j-1]}')
         j=j+1
 
-    dss.run_command("Solve")
+    dss.run_command("Solve number=1 stepsize=1s")
+    reply = run_command("? Regcontrol.FEEDER_REGA.TapNum")
+    print(f"TapNum reply={reply}")
     # save some results
     allbusmagpu = dss.Circuit.AllBusMagPu()
     allbusmagpu_ts.append(allbusmagpu)
@@ -229,7 +234,10 @@ voltage_results = pd.DataFrame(allbusmagpu_ts, columns=allnodenames)
 dir_to_results = os.path.join(dir_to_feeder, "simulation_results")
 voltage_results.to_csv(dir_to_results+'\\voltage_results_'+append_time+'.csv')
 
-
+results_time = {}
+results_time['results_time']=append_time
+with open(os.path.join(dir_to_results,'results_time.txt'),'w') as outfile:
+    json.dump(results_time, outfile)
 h.helicsFederateFinalize(fed)
 
 h.helicsFederateFree(fed)

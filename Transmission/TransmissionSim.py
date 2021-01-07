@@ -84,6 +84,8 @@ ss.PQ.config.q2q = 1
 ss.PQ.config.p2z = 0
 ss.PQ.config.q2z = 0
 
+#ss.PVD1.config.plim=1
+
 # turn off under-voltage PQ-to-Z conversion
 ss.PQ.pq2z = 0
 
@@ -132,7 +134,7 @@ DER_caps = np.ones(20)*0.009
 # dae: differential–algebraic equation
 # get the load time series randomly choose
 consistent_random_object = np.random.RandomState(123)
-load_timeseries = consistent_random_object.normal(1, 0.02, int(total_time))
+load_timeseries = consistent_random_object.normal(1, 0.02, int(total_time)) # used to be 0.02
 #Load_timeseries_df = pd.DataFrame(Load_timeseries)
 # register the publication
 for k, v in publications.items():
@@ -162,7 +164,7 @@ print(f"===========Start simulation==================")
 mppt=1
 #
 consistent_random_object_mppt = np.random.RandomState(687)
-mppt_timeseries = consistent_random_object_mppt.normal(0.55, 0.05, [int(total_time), 20])
+mppt_timeseries = consistent_random_object_mppt.normal(0.55, 0.05, [int(total_time), 20]) #0.55, 0.05
 mppt_current_all = []
 mppt_current = np.ones(20)
 current_time = 0
@@ -247,35 +249,35 @@ for request_time in np.arange(0, total_time, simulation_step_time):
 
 
     PVD_mppt_new = np.minimum(DER_caps*mppt_current, PVD_vsm_max)
-    print(f"DER_caps*mppt_current={DER_caps*mppt_current}")
-    print(f"PVD_vsm_max = {PVD_vsm_max}")
-    if (PVD_mppt_new <= DER_caps*mppt_current).all() and (PVD_mppt_new <= PVD_vsm_max).all():
-        print('the minimum is correct!')
-    else:
-        print('the minimum is wrong!')
+    #print(f"DER_caps*mppt_current={DER_caps*mppt_current}")
+    #print(f"PVD_vsm_max = {PVD_vsm_max}")
+    # if (PVD_mppt_new <= DER_caps*mppt_current).all() and (PVD_mppt_new <= PVD_vsm_max).all():
+    #     print('the minimum is correct!')
+    # else:
+    #     print('the minimum is wrong!')
 
-    print(f"PVD_mppt_new={PVD_mppt_new}")
+    #print(f"PVD_mppt_new={PVD_mppt_new}")
     ss.PVD1.set(src='pmx', idx=PVD_AGC_idx, attr='v', value=PVD_mppt_new)
     # the AGC response should stay below the Pmax: should set the andes varibles pmax for PVD1
-    print(f"PVD_AGC_response={PVD_AGC_response}")
+    #print(f"PVD_AGC_response={PVD_AGC_response}")
 
     ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
     # start the dynamic simulation
-    print(f"ss.PVD1.pmx.v={ss.PVD1.pmx.v}")
+    #print(f"ss.PVD1.pmx.v={ss.PVD1.pmx.v}")
     ss.TDS.config.tf = current_time + simulation_step_time
     ss.TDS.run()
     # print(f"Bus_voltages = {ss.Bus.v.v}")
     ACE = ss.ACEc.ace.v[0]
-    print(f"ss.ACEc.ace.v={ss.ACEc.ace.v}")
+    #print(f"ss.ACEc.ace.v={ss.ACEc.ace.v}")
     # get DER output
     pvd1_current = ss.PVD1.Ipout_y.v
     pvd1_voltage = ss.PVD1.v.v
     pvd1_power = pvd1_current * pvd1_voltage # unit is 100 MW
-    print(f"pvd1_power={pvd1_power}")
-    if (pvd1_power <= PVD_mppt_new).all():
-        print('The output power is correct')
-    else:
-        print('The output power is wrong')
+    # print(f"pvd1_power={pvd1_power}")
+    # if (pvd1_power <= PVD_mppt_new).all():
+    #     print('The output power is correct')
+    # else:
+    #     print('The output power is wrong')
 
 
     pvd1_power_34Bus = pvd1_power[:10]
@@ -335,7 +337,7 @@ ax3.plot(ss.dae.ts.t, ss.dae.ts.get_data([ss.Bus.v],a=[0,3,8,]))
 ax3.set_xlabel('Time (s)')
 ax3.set_ylabel('Voltage (pu)')
 
-ax4.plot(ss.dae.ts.t, ss.dae.ts.get_data([ss.PVD1.Pext]*100,a=[0,]))
+ax4.plot(ss.dae.ts.t, 100*ss.dae.ts.get_data([ss.PVD1.Pext],a=[0,]))
 ax4.set_xlabel('Time (s)')
 ax4.set_ylabel('PVD1 AGC signal (MW)')
 #plt.show()
@@ -343,6 +345,15 @@ now = datetime.now() # record the time
 append_time = now.strftime("%m_%d_%Y_%H_%M_%S")
 figure_name = "cosim_results_" + append_time + ".png"
 fig.savefig(os.path.join(path_to_results, figure_name), dpi=300)
+
+# ss.TDS.load_plotter()
+# ss.TDS.plt.plot(ss.PVD1.Pext, a=(0,1,2,6),ytimes=100,ylabel='AGC signal (MW)')
+
+
+results_time = {}
+results_time['results_time']=append_time
+with open('results_time.txt','w') as outfile:
+    json.dump(results_time, outfile)
 
 #ss.TDS.load_plotter()
 #print(ss.dae.ts.y.shape)
@@ -366,22 +377,25 @@ voltage_PQ_3 = ss.dae.ts.y[:, ss.Bus.v.a[3]]
 dae_time = ss.dae.ts.t
 dae_frequency = ss.dae.ts.y[:, ss.ACEc.f.a]*60
 dae_ACE = ss.dae.ts.y[:, ss.ACEc.ace.a]*100
+dae_Pext_AGC = ss.dae.ts.get_data([ss.PVD1.Pext],a=[0,])*100
+dae_TGOV1N_AGC = ss.dae.ts.get_data([ss.TGOV1N.paux],a=[0,])*100
+dae_DER_output = ss.dae.ts.get_data([ss.PVD1.Ipout_y],a=[0,])*ss.dae.ts.get_data([ss.PVD1.v],a=[0,])*100
 
-
+#print(f"dae_Pext_AGC.shape={dae_Pext_AGC.shape}")
 allbusindex = ss.Bus.v.a
 
-freq_ACE_np = np.hstack([dae_time.reshape(dae_time.shape[0],1),dae_frequency, dae_ACE])
+freq_ACE_np = np.hstack([dae_time.reshape(dae_time.shape[0],1),dae_frequency, dae_ACE, dae_Pext_AGC, dae_TGOV1N_AGC, dae_DER_output])
 
 voltage_all_np = np.hstack([dae_time.reshape(dae_time.shape[0],1), voltage_all])
 
-freq_ACE_df = pd.DataFrame(freq_ACE_np, columns=['time_s','frequency_Hz','ACE_MW'])
+freq_ACE_df = pd.DataFrame(freq_ACE_np, columns=['time_s','frequency_Hz','ACE_MW', 'Pext_AGC', 'TGOV1N_AGC', 'DER_output'])
 voltage_all_df = pd.DataFrame(voltage_all_np, columns = ['time_s']+ list(allbusindex.astype(str)))
 
 time_list_np = np.array(time_list).reshape(len(time_list),1)
 
-print(f"type(mppt_current_all)")
+#print(f"type(mppt_current_all)")
 mppt_current_all_np = np.array(mppt_current_all)
-print(f"shape={mppt_current_all_np.shape}")
+#print(f"shape={mppt_current_all_np.shape}")
 
 mppt_np = np.hstack([time_list_np, \
                         np.array(mppt_current_all)])
@@ -411,7 +425,7 @@ pvd1_power_df.to_csv(path_to_numerical_results + "\\pvd1_power_df_"+append_time+
 
 # vsm, mppt, power output
 
-print(y_object.shape)
+#print(y_object.shape)
 # path_to_results = "simulation_results"
 # np.savetxt(path_to_results + "\\voltage_all_fault.csv", voltage_all, delimiter=",")
 # np.savetxt(path_to_results + "\\voltage_PQ_3_fault.csv", voltage_PQ_3, delimiter=",")

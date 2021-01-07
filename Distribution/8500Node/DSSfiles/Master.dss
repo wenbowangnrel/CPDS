@@ -3,7 +3,7 @@
 
 Clear
 
-New Circuit.8500Node bus1=8500Node pu=1.05 basekV=138 r1=0  x1=0.001  r0=0  x0=0.001  
+New Circuit.8500Node bus1=8500Node pu=1.01 basekV=138 r1=0  x1=0.001  r0=0  x0=0.001  
 
 
 ! Make the source stiff with small impedance
@@ -27,7 +27,7 @@ Calcvoltagebases     ! This also establishes the bus list
 ! Load in bus coordintes now that bus list is established
 Buscoords  Buscoords.dss
 
-Set Maxiterations=20
+Set Maxiterations=20 mode=yearly
 solve
 !show losses
 !show voltage ln nodes

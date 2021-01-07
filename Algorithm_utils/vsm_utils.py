@@ -57,8 +57,9 @@ def get_vsm(dss, feeder_name, index_DERs, allbusmagpu_base):
             run_command(f'New Load.P_perturb bus1={nodename} Phases=1 Conn=Wye Model=1 kv={buskv} kw={delta_p} kvar=0')
         else:
             run_command(f"Edit Load.P_perturb bus1={nodename}")
-        #dss.Solution.ControlMode(-1) # set control mode off
-        dss.Solution.SolveNoControl()
+        dss.Solution.ControlMode(2) # set control mode off
+        dss.Solution.Solve()
+        #dss.Solution.SolveNoControl()
         # not get the voltage
         allbusmagpu = np.array(dss.Circuit.AllBusMagPu())
         # get the column of the sensitivity matrix for column i

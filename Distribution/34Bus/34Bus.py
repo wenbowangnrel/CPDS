@@ -71,6 +71,13 @@ else:
     print('------ Opendss failed ----')
     print(f'Error is "{dss.Text.Result()}"!')
 print(f"After opendss run os.getcwd()={os.getcwd()}")
+run_command("BatchEdit Load..* Vminpu=0.9")
+run_command("New Loadshape.dummy npts=60 sinterval=1 Pmult=[file=dummy_profile.txt]")
+run_command("BatchEdit Load..* Yearly=dummy")
+run_command("set mode=yearly number=60 stepsize=1s")
+dss.Solution.ControlMode(2)
+print(f"dss.Solution.Mode()={dss.Solution.Mode()}")
+print(f"dss.Solution.ControlMode()={dss.Solution.ControlMode()}")
 
 # get load kw values
 BASEKV = dss.Vsources.BasekV()
@@ -131,8 +138,27 @@ totalpower_ts = []
 #index_DERs = np.arange(num_nodes-10, num_nodes, 1) # attach DER to the last 10 nodes
 index_DERs = np.array([12, 25, 26, 27, 28, 29, 30, 92, 93, 94])
 # here define DER power output=500
-scale = 0.478*100/2.032
+scale = 0.478*100/0.970657
 DER_output = np.ones(10)*500/scale
+
+# Because scale is changed the base line simulation need to redo.
+# dss.Loads.First()
+# for j in range(num_loads):
+#     loadname = dss.Loads.Name()
+#     # print(f"{loadname} kw={dss.Loads.kW()}")
+#     # text = run_command("? Load.p_perturb.enabled")
+#
+#     # now calculate kw and kvar based on the csv
+#     load_mult = 1
+#     loadkw_new = load_mult * loadkw_dict[loadname]
+#     loadkvar_new = load_mult * loadkvar_dict[loadname]
+#     # now change opendss load object
+#     run_command('edit load.{ln} kw={kw}'.format(ln=loadname, kw=loadkw_new))
+#     run_command('edit load.{ln} kvar={kw}'.format(ln=loadname, kw=loadkvar_new))
+#     dss.Loads.Next()
+# set up initial voltage to 1.01
+dss.Vsources.PU(1.01)
+
 i=1
 for ind in index_DERs:
     nodename = allnodenames[ind]
@@ -160,7 +186,12 @@ for request_time in np.arange(0, total_time, simulation_step_time):
         run_command(f'Edit generator.der_{j} kw={DER_output[j-1]}')
         j=j+1
 
-    dss.run_command("Solve")
+    dss.run_command("Solve number=1 stepsize=1s")
+    reply = run_command("? Load.D862_838sb.Vminpu")
+    print(f"reply={reply}")
+    reply = run_command("? Regcontrol.creg1a.TapNum")
+    print(f"TapNum reply={reply}")
+    #run_command("show taps")
     # save some results
     allbusmagpu = dss.Circuit.AllBusMagPu()
     allbusmagpu_ts.append(allbusmagpu)
@@ -241,6 +272,10 @@ voltage_results = pd.DataFrame(allbusmagpu_ts, columns=allnodenames)
 dir_to_results = os.path.join(dir_to_feeder, "simulation_results")
 voltage_results.to_csv(dir_to_results+'\\voltage_results_'+append_time+'.csv')
 
+results_time = {}
+results_time['results_time']=append_time
+with open(os.path.join(dir_to_results,'results_time.txt'),'w') as outfile:
+    json.dump(results_time, outfile)
 
 h.helicsFederateFinalize(fed)
 
