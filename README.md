@@ -12,6 +12,7 @@ pip install OpenDSSDirect.py
 # git clone https://github.com/NREL/PyDSS.git
 # pip install -e .
 
+# install ANDES in dev mode
 git clone https://github.com/cuihantao/andes
 python setup.py develop
 pip install -e .
