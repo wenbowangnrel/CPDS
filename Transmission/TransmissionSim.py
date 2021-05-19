@@ -134,7 +134,7 @@ DER_caps = np.ones(20)*0.009
 # dae: differential–algebraic equation
 # get the load time series randomly choose
 consistent_random_object = np.random.RandomState(123)
-load_timeseries = consistent_random_object.normal(1, 0.02, int(total_time)) # used to be 0.02
+load_timeseries = consistent_random_object.normal(1, 0.0, int(total_time)) # used to be 0.02
 #Load_timeseries_df = pd.DataFrame(Load_timeseries)
 # register the publication
 for k, v in publications.items():
@@ -164,7 +164,7 @@ print(f"===========Start simulation==================")
 mppt=1
 #
 consistent_random_object_mppt = np.random.RandomState(687)
-mppt_timeseries = consistent_random_object_mppt.normal(0.55, 0.05, [int(total_time), 20]) #0.55, 0.05
+mppt_timeseries = consistent_random_object_mppt.normal(0.8, 0.05, [int(total_time), 20]) #0.55/0.8, 0.05
 mppt_current_all = []
 mppt_current = np.ones(20)
 current_time = 0
@@ -261,7 +261,7 @@ for request_time in np.arange(0, total_time, simulation_step_time):
     # the AGC response should stay below the Pmax: should set the andes varibles pmax for PVD1
     #print(f"PVD_AGC_response={PVD_AGC_response}")
 
-    ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
+    #ss.PVD1.set(src='Pext0', idx=PVD_AGC_idx, attr='v', value=PVD_AGC_response)
     # start the dynamic simulation
     #print(f"ss.PVD1.pmx.v={ss.PVD1.pmx.v}")
     ss.TDS.config.tf = current_time + simulation_step_time

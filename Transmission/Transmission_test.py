@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Transmission simulator using Andes
+print(ss.PQ.doc())
 """
 from datetime import datetime
 import cmath
@@ -18,6 +19,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import andes
 
+import matplotlib.style
+import matplotlib as mpl
+#mpl.style.use('classic')
+
+mpl.rcParams['font.size'] = 16
+mpl.rcParams['legend.fontsize'] = 'large'
 
 ##################### First define a broker for total cosim ###########################
 path_to_TransmissionSim = os.getcwd()
@@ -45,35 +52,69 @@ SUBSCRIPTIONS = {}
 
 # ###################  initialize transmission systems #####################################
 andes.main.config_logger(stream_level=20)
-ieee14 = andes.get_case('ieee14/ieee14_pvd1_2DistBus.xlsx')
+#ieee14 = andes.get_case('ieee14/ieee14_pvd1_2DistBus.xlsx')
 #ieee14 = andes.get_case('ieee14/ieee14_pvd1_debug.xlsx')
 
-ss = andes.load(ieee14, setup=False, no_output=True)
+#ss = andes.load(ieee14, setup=False, no_output=True)
 # this is to add fault
 #ss.add("Toggler", dict(model='SynGen', dev="GENROU_3", t=10.0))
+dir_to_tranmission_name = r"C:\Users\wwang2\Documents\OE\CPDS_setup\Network_models\Transmission\ieee39.xlsx"
+ss = andes.run(dir_to_tranmission_name, setup=True, no_output=True)
 
-ss.setup()
+#ss.setup()
 
 # use constant power model for PQ (we will come back to this later)
 ss.PQ.config.p2p = 1
-ss.PQ.config.q2q = 1
+ss.PQ.config.q2q = 0
 ss.PQ.config.p2z = 0
-ss.PQ.config.q2z = 0
+ss.PQ.config.q2z = 1
 
 # turn off under-voltage PQ-to-Z conversion
 ss.PQ.pq2z = 0
 
 #perform initial power flow for dynamic simulation initialization
 ss.PFlow.run()
-
+shed_buses = ss.PQ.bus.v
+pq_shed_idx = ss.PQ.find_idx(keys='bus', values=shed_buses)
+v1 = ss.Bus.v.v
+Xeq = ss.PQ.Xeq.v
+Qpf = ss.PQ.Qpf.v
+v0 = ss.PQ.v0.v
+ss.PQ.set(src='Xeq', idx=pq_shed_idx[0], attr='v', value=2) # TODO
+ss.PFlow.run()
+ss.PQ.Xeq.v[0]
+v2 = ss.Bus.v.v
 #time domain simulation initialization
 ss.TDS.init()
 
 #first run 0.1 to make sure everything runs well
-ss.TDS.config.tf = 10
+ss.TDS.config.tf = 2
 
 # start the 0.1 second dynamic simulation
 ss.TDS.run()
+v1 = ss.Bus.v.v
+Xeq = ss.PQ.Xeq.v
+Qpf = ss.PQ.Qpf.v
+v0 = ss.PQ.v0.v
+print(f"v0={v0}")
+print(f"Xeq={Xeq}")
+print(f"")
+
+
+ss.PQ.set(src='Xeq', idx=pq_shed_idx[0], attr='v', value=5) # TODO
+#ss.PQ.set(src='Qpf', idx=pq_shed_idx[0], attr='v', value=3)
+#ss.PQ.set(src='Ppf', idx=pq_shed_idx[0], attr='v', value=7)
+ss.TDS.config.tf = 4
+ss.TDS.run()
+v0_after = ss.PQ.v0.v
+Xeq_after = ss.PQ.Xeq.v
+print(f"v0_after={v0_after}")
+print(f"Xeq_after={Xeq_after}")
+
+ss.TDS.load_plotter()
+ss.TDS.plt.plot(ss.Bus.v, a=(2,), ytimes=1, ylabel='V (pu)')
+
+
 ss.dae.ts.y
 shed_buses = ss.PQ.bus.v
 pq_shed_idx = ss.PQ.find_idx(keys='bus', values=shed_buses)
@@ -95,9 +136,26 @@ PVD_AGC_response2 = np.zeros(int(len(PVD_AGC_idx)/2))
 pq_p = ss.PQ.get(src='Ppf', idx=pq_shed_idx, attr='v')
 # record DER output
 #ss.dae.ts.get_data([ss.PVD1.Ipout_y],a=[1,])*ss.dae.ts.get_data([ss.PVD1.v],a=[1,])*100
-pvd1_current = ss.PVD1.Ipout_y.v
-pvd1_voltage = ss.PVD1.v.v
-pvd1_power = pvd1_current*pvd1_voltage*100 # in MW
+# pvd1_current = ss.PVD1.Ipout_y.v
+#
+# # ss.PVD1.Iqout_y.v
+# pvd1_voltage = ss.PVD1.v.v
+# pvd1_power = pvd1_current*pvd1_voltage*100 # in MW
+
+#dae_DER_output = ss.dae.ts.get_data([ss.PVD1.Ipout_y],a=[0,])*ss.dae.ts.get_data([ss.PVD1.v],a=[0,])*100
+dae_genrou_output = ss.dae.ts.y[:,ss.GENROU.te.a[4]]/ss.dae.ts.x[:,ss.GENROU.omega.a[4]]*100
+
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['legend.fontsize'] = 'large'
+fig, ax = plt.subplots(figsize=(8, 6))
+
+ax.plot(ss.dae.ts.t, dae_genrou_output)
+ax.set_xlabel('Time (s)')
+ax.set_ylabel('PVD1 Pout (MW)')
+
+
+
+plt.show()
 # pq_p = array([0.217, 0.5  , 0.478, 0.076, 0.15 , 0.295, 0.09 , 0.035, 0.061,
 #        0.135, 0.2  ]
 # Sbase = 100 MW

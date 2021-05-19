@@ -22,8 +22,9 @@ import matplotlib.pyplot as plt
 
 cwd = os.getcwd()
 print(f"python_dir={os.getcwd()}")
-feeder_name = '34Bus'
-dir_to_feeder_dss = os.path.join(cwd,'..','Distribution', feeder_name ,'DSSfiles')
+feeder_name = 'J1'
+distribution_folder = r'C:\Users\wwang2\Documents\OE\CPDS_setup\Network_models\Distribution'
+dir_to_feeder_dss = os.path.join(distribution_folder, feeder_name)
 
 # run snapshot and get v and p at current step, and save pickle/npz file
 

@@ -52,7 +52,7 @@ print("reading json okay!")
 # load_profile_scaled = pd.concat([load_profile_scaled, load_profile_scaled])
 
 consistent_random_object = np.random.RandomState(1234)
-load_profile_random = consistent_random_object.normal(1, 0.02, int(total_time))
+load_profile_random = consistent_random_object.normal(1, 0.0, int(total_time))
 
 
 # fig, ax1 = plt.subplots()
