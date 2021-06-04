@@ -69,10 +69,18 @@ print(f"{federate_name}: Combination federate created", flush=True)
 
 # ###################  initialize transmission systems #####################################
 andes.main.config_logger(stream_level=20)
-ieee14 = andes.get_case('ieee14/ieee14_pvd1_2DistBus.xlsx')
-#ieee14 = andes.get_case('ieee14/ieee14_pvd1_debug.xlsx')
 
-ss = andes.load(ieee14, setup=False, no_output=True)
+#ieee14 = andes.get_case('ieee14/ieee14_pvd1_2DistBus.xlsx')
+#ieee14 = andes.get_case('ieee14/ieee14_pvd1_debug.xlsx')
+#ss = andes.load(ieee14, setup=False, no_output=True)
+# load case from the project folder
+file_name = 'ieee14_pvd1_2DistBus.xlsx' # users please change this if you want
+path_to_transmission_xlsx_folder = os.path.join(os.getcwd(), "..", "Network_models", "Transmission")
+path_to_transmission_xlsx = os.path.join(path_to_transmission_xlsx_folder, file_name)
+
+ss = andes.run(path_to_transmission_xlsx, setup=False, no_output=True)
+
+
 # this is to add fault
 #ss.add("Toggler", dict(model='SynGen', dev="GENROU_3", t=10.0))
 

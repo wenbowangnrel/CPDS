@@ -1,0 +1,124 @@
+amply==0.1.4
+andes @ file:///C:/Users/wwang2/Documents/OE/andes
+argon2-cffi==20.1.0
+async-generator==1.10
+atomicwrites==1.4.0
+attrs==20.2.0
+backcall==0.2.0
+bleach==3.2.1
+bokeh==2.2.1
+certifi==2020.12.5
+cffi==1.14.3
+chardet==3.0.4
+click==7.1.2
+colorama==0.4.3
+coloredlogs==14.0
+cvxopt==1.2.5
+cycler==0.10.0
+decorator==4.4.2
+defusedxml==0.6.0
+descartes==1.1.0
+dill @ file:///home/conda/feedstock_root/build_artifacts/dill_1592315758554/work
+docutils==0.16
+dss-python==0.10.1
+entrypoints==0.3
+enum34==1.1.10
+et-xmlfile==1.0.1
+fastcache @ file:///D:/bld/fastcache_1602440737883/work
+feather-format==0.4.1
+future==0.18.2
+h5py==2.10.0
+helics==2.6.1.post2
+helics-cli @ git+git://github.com/GMLC-TDC/helics-cli.git@b10a2aa08636642d7f70f23a70efd319ce1bf3b3
+humanfriendly @ file:///D:/bld/humanfriendly_1602602364424/work
+idna==2.10
+importlib-metadata==2.0.0
+iniconfig==1.0.1
+ipykernel==5.3.4
+ipython==7.16.1
+ipython-genutils==0.2.0
+jdcal==1.4.1
+jedi==0.17.2
+Jinja2==2.11.2
+joblib==0.17.0
+json5==0.9.5
+jsonschema==3.2.0
+jupyter-client==6.1.7
+jupyter-core==4.6.3
+jupyterlab==2.2.8
+jupyterlab-pygments==0.1.2
+jupyterlab-server==1.2.0
+kiwisolver @ file:///D:/bld/kiwisolver_1602517438240/work
+kvxopt==1.2.5.4
+MarkupSafe==1.1.1
+matplotlib @ file:///D:/bld/matplotlib-suite_1602600988006/work
+mistune==0.8.4
+mkl-service==2.3.0
+mpmath==1.1.0
+multiprocess @ file:///D:/bld/multiprocess_1602311283792/work
+nbclient==0.5.0
+nbconvert==6.0.7
+nbformat==5.0.7
+nest-asyncio==1.4.1
+networkx==2.5
+notebook==6.1.4
+numexpr==2.7.1
+numpy @ file:///D:/bld/numpy_1603047746511/work
+olefile @ file:///home/conda/feedstock_root/build_artifacts/olefile_1602866521163/work
+OpenDSSDirect.py==0.3.7
+openpyxl==3.0.5
+packaging==20.4
+pandas @ file:///D:/bld/pandas_1603237092730/work
+pandocfilters==1.4.2
+parso==0.7.1
+pathos @ file:///home/conda/feedstock_root/build_artifacts/pathos_1600885199823/work
+pickleshare==0.7.5
+Pillow @ file:///D:/bld/pillow_1602708905248/work
+pluggy==0.13.1
+pox @ file:///home/conda/feedstock_root/build_artifacts/pox_1592289380928/work
+ppft @ file:///home/conda/feedstock_root/build_artifacts/ppft_1600878509786/work
+prometheus-client==0.8.0
+prompt-toolkit==3.0.8
+PuLP==2.4
+py==1.9.0
+pyarrow==1.0.1
+pycparser==2.20
+-e git+https://github.com/NREL/PyDSS.git@64f2abcc0cdb79b94ac3d9cfe9d8794ff831e32c#egg=PyDSS
+Pygments==2.7.1
+pyparsing==2.4.7
+pyproj==2.6.1.post1
+pyreadline @ file:///D:/bld/pyreadline_1602253116910/work
+pyrsistent==0.17.3
+pytest==6.1.1
+python-dateutil==2.8.1
+pytz==2020.1
+pywin32==228
+pywinpty==0.5.7
+PyYAML==5.3.1
+pyzmq==19.0.2
+requests==2.24.0
+scikit-learn==0.23.2
+scipy @ file:///C:/ci/scipy_1597675683670/work
+seaborn==0.11.0
+Send2Trash==1.5.0
+Shapely==1.7.1
+six @ file:///home/conda/feedstock_root/build_artifacts/six_1590081179328/work
+sklearn==0.0
+strip-hints==0.1.9
+sympy==1.5.1
+tables==3.6.1
+terminado==0.9.1
+testpath==0.4.4
+threadpoolctl==2.1.0
+toml==0.10.0
+tornado @ file:///D:/bld/tornado_1602489126091/work
+tqdm @ file:///home/conda/feedstock_root/build_artifacts/tqdm_1602171507552/work
+traitlets==4.3.3
+typing-extensions==3.7.4.3
+urllib3==1.25.10
+wcwidth==0.2.5
+webencodings==0.5.1
+wincertstore==0.2
+xlrd @ file:///home/conda/feedstock_root/build_artifacts/xlrd_1595712200082/work
+XlsxWriter @ file:///home/conda/feedstock_root/build_artifacts/xlsxwriter_1602583799765/work
+zipp==3.3.0
