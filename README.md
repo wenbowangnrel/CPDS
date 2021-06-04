@@ -16,6 +16,7 @@ pip install OpenDSSDirect.py
 git clone https://github.com/cuihantao/andes
 python setup.py develop
 pip install -e .
+andes prepare
 ```
 
 Check helics version
