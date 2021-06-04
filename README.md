@@ -25,21 +25,10 @@ Download the latest version of andes from GitHub repository and install from the
 
 
 ### install helics-cli
-(for windows)
+(for windows and mac)
 ```
 pip install git+git://github.com/GMLC-TDC/helics-cli.git@python-master
 ```
-
-After running setup.py cosim can be launched in cli by (note: the setup.py has not been created to-date. All the framework has been done manually for now)
-```
-helics --verbose run --path runner.json
-```
-
-
-### Results and figures
-
-Results are (for now) in the log files, a notebook file is created to read results.
-Figures are stored in the results_figure folder
 
 Install pulp for distribution voltage-power sensitivity matrix and optimization
 ```
@@ -56,6 +45,19 @@ import helics as h
 h.__version__
 ```
 ### NOTES: HELICS 2.6.0 and newer should work, but newer versions have not been tested.
+
+After running setup.py cosim can be launched in cli by (note: the setup.py has not been created to-date. All the framework has been done manually for now)
+```
+helics --verbose run --path runner.json
+```
+
+
+### Results and figures
+
+Results are (for now) in the log files, a notebook file is created to read results.
+Figures are stored in the results_figure folder
+
+
 ### Hard pull in git
 ```
 git reset --hard origin/master
