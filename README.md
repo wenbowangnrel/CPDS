@@ -37,14 +37,12 @@ install andes (not in dev mode, ignore this if you have installed ANDES in dev m
 conda install andes
 andes prepare
 ```
+Notes: if you installed ANDES in dev mode through downloading the latest version of andes from GitHub repository and install from the local folder, (the advantage is the getting latest version before release), using pip update can't include the latest code development in ANDES.
+
 This is for ANDES dependences
 ```
 pip install openpyxl
 ```
-
-Download the latest version of andes from GitHub repository and install from the local folder since the latest version hasn't been released. Using pip update can't include the latest code development in ANDES.
-
-
 
 Install pulp for distribution voltage-power sensitivity matrix and optimization
 ```
@@ -61,7 +59,7 @@ helics --verbose run --path runner.json
 
 ### Results and figures
 
-Results are (for now) in the log files, a notebook file is created to read results.
+Results are stored in the csv files in federates folders, a notebook file is created to read results.
 Figures are stored in the results_figure folder
 
 
