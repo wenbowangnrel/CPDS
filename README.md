@@ -51,9 +51,9 @@ pip install pulp
 ```
 
 
-### Launch the cosimulation
+### Launch CPDS cosimulation
 
-cosim can be launched in Terminal using cli tool by the command
+cosim can be launched in Terminal using HELICS cli tool by the command
 ```
 helics --verbose run --path runner.json
 ```
