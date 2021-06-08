@@ -75,7 +75,7 @@ andes.main.config_logger(stream_level=20)
 #ss = andes.load(ieee14, setup=False, no_output=True)
 # load case from the project folder
 file_name = 'ieee14_pvd1_2DistBus.xlsx' # users please change this if you want
-path_to_transmission_xlsx_folder = os.path.join(os.getcwd(), "..", "Network_models", "Transmission")
+path_to_transmission_xlsx_folder = os.path.join(os.getcwd(), "network_model")
 path_to_transmission_xlsx = os.path.join(path_to_transmission_xlsx_folder, file_name)
 
 ss = andes.run(path_to_transmission_xlsx, setup=False, no_output=True)
