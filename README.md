@@ -30,7 +30,7 @@ h.__version__
 install helics-cli
 (for windows and mac)
 ```
-pip install git+git://github.com/GMLC-TDC/helics-cli.git@python-master
+pip install git+git://github.com/GMLC-TDC/helics-cli.git@main
 ```
 
 install andes (not in dev mode, ignore this if you have installed ANDES in dev mode)
