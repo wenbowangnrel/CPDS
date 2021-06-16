@@ -1,6 +1,11 @@
 # CPDS
 Cyber-Physical Dynamic System Modeling for Frequency Regulation and AGC Services of DES\
 PI: Xin Fang NREL
+
+## Related repos
+CPDS_setup: `https://github.nrel.gov/wwang2/CPDS_setup`\
+CPDS_Texas2k: `https://github.nrel.gov/wwang2/CPDS_Texas2k`
+
 ### Env setup: install HELICS, Opendssdirect, etc.
 ```
 conda create --name oe36 python=3.6
