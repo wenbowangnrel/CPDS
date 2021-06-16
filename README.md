@@ -2,7 +2,7 @@
 Cyber-Physical Dynamic System Modeling for Frequency Regulation and AGC Services of DES\
 PI: Xin Fang NREL
 
-## Related repos
+### Related repos
 CPDS_setup: https://github.nrel.gov/wwang2/CPDS_setup \
 CPDS_Texas2k: https://github.nrel.gov/wwang2/CPDS_Texas2k
 
