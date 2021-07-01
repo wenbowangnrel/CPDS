@@ -11,7 +11,8 @@ CPDS_Texas2k: https://github.nrel.gov/wwang2/CPDS_Texas2k
 conda create --name oe36 python=3.6
 conda activate oe36
 # conda install -c gmlc-tdc helics
-pip install helics==2.6.0.post0.dev0
+# pip install helics==2.6.0.post0.dev0
+pip install helics==2.7.1
 
 pip install OpenDSSDirect.py
 # git clone https://github.com/NREL/PyDSS.git
