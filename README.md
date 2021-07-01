@@ -17,6 +17,7 @@ pip install helics==2.7.1
 pip install OpenDSSDirect.py
 # git clone https://github.com/NREL/PyDSS.git
 # pip install -e .
+pip install seaborn
 
 # install ANDES in dev mode
 git clone https://github.com/cuihantao/andes
