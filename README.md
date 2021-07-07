@@ -73,6 +73,6 @@ Figures are stored in the results_figure folder
 
 ### Hard pull in git
 ```
-git reset --hard origin/master
 git fetch --all
+git reset --hard origin/master
 ```
