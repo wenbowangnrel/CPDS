@@ -7,6 +7,7 @@ import json
 import math
 import re
 import os
+from pathlib import Path
 import sys
 import numpy as np
 import helics as h
@@ -23,12 +24,13 @@ import matplotlib.pyplot as plt
 cwd = os.getcwd()
 print(f"python_dir={os.getcwd()}")
 feeder_name = 'J1'
-distribution_folder = r'C:\Users\wwang2\Documents\OE\CPDS_setup\Network_models\Distribution'
-dir_to_feeder_dss = os.path.join(distribution_folder, feeder_name)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+distribution_folder = REPO_ROOT / 'Distribution'
+dir_to_feeder_dss = distribution_folder / feeder_name
 
 # run snapshot and get v and p at current step, and save pickle/npz file
 
-run_command(f'compile {dir_to_feeder_dss}/Master.dss')
+run_command(f'compile "{dir_to_feeder_dss / "Master.dss"}"')
 
 if dss.Text.Result() == '':
     print('------ Success for the base run -----')

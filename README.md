@@ -1,6 +1,9 @@
 # CPDS
 Cyber-Physical Dynamic System Modeling for Frequency Regulation and AGC Services of DES\
-PI: Xin Fang NREL
+
+
+PI: Xin Fang
+Contributor: Wenbo Wang
 
 ### Related repos
 CPDS_setup: https://github.nrel.gov/wwang2/CPDS_setup \
@@ -15,8 +18,6 @@ conda activate oe36
 pip install helics==2.7.1
 
 pip install OpenDSSDirect.py
-# git clone https://github.com/NREL/PyDSS.git
-# pip install -e .
 pip install seaborn
 
 # install ANDES in dev mode
@@ -76,3 +77,29 @@ Figures are stored in the results_figure folder
 git fetch --all
 git reset --hard origin/master
 ```
+
+### Local configuration
+
+The optional standalone scripts construct paths with `pathlib.Path`, anchored to
+`__file__`, so model paths do not depend on the terminal's working directory.
+No environment variables are required for these paths.
+
+| Script | Expected location relative to the CPDS repository root |
+| --- | --- |
+| `Algorithm_utils/vsm_test.py` | `Distribution/J1/Master.dss` and the J1 feeder's supporting files (not included) |
+| `Transmission/Transmission_test.py` | `Transmission/network_model/ieee39.xlsx` (not included) |
+| `Colse_loop_ACPF_cyber.py` | `Transmission/network_model/t3ps.raw` (included) |
+| `Colse_loop_ACPF_cyber.py` | `.local/Austin/` containing the external DSS dataset, including `P5U/p5uhs2_1247/Master.dss` (not included) |
+| `Colse_loop_ACPF_cyber.py` | `.local/18_bus/` containing the external scheduling dataset, including `ToGenerateUC&EDInput/` (not included) |
+
+Place the missing model data at these locations before running the corresponding
+script. The original J1 and IEEE 39-bus model choices are preserved. The legacy
+Austin script also requires external Python modules that are not bundled here.
+Paths passed to legacy APIs are converted to strings where needed.
+
+Keep credentials and unpublished data in `.env`, `private/`, or `.local/`, which
+are ignored by Git. The `Distribution/J1/` and `ieee39.xlsx` locations are not
+ignored; review any data placed there before adding it to Git. Notebook outputs
+are cleared for sharing.
+The legacy requirements file contains unpinned packages where local build paths
+were removed; the original environment has not been reproduced or validated.

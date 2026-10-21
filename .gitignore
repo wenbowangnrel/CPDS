@@ -6,3 +6,33 @@ Aggregator_DER/Aggregator_DER_8500Node/simulation_results/*.csv
 Distribution/34Bus/simulation_results/*.csv
 Distribution/8500Node/simulation_results/*.csv
 Transmission/simulation_results/*.csv
+# Local editor settings and notebook checkpoints
+.idea/
+.vscode/
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+
+# Local environments, credentials, and private working files
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+.local/
+private/
+*.pem
+*.key
+*.p12
+*.pfx
+.DS_Store
+Thumbs.db
+
+# Generated simulation reports and serialized scratch results
+**/simulation_results/*.txt
+Transmission/*_out.lst
+Transmission/*_out.txt
+Transmission/*_out.npz
+Transmission/results_time.txt
+Transmission/cosim_results.png
+Transmission/pk_test.pk

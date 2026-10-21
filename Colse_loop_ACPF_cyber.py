@@ -21,6 +21,9 @@ import matplotlib.pyplot as plt
 import xlrd
 import time
 import os
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent
 import warnings
 import random
 import other_services
@@ -53,7 +56,7 @@ from RTEDModel import EDmdl
 import andes
 andes.main.config_logger()
 
-pfss = andes.load('C:/Users/xfang/gitrepos/Andes-master/cases/18bus/t3ps.raw')
+pfss = andes.load(str(REPO_ROOT / 'Transmission' / 'network_model' / 't3ps.raw'))
 
 switched_shut0= pfss.Shunt.b.v
 v1_bus2 = pd.DataFrame()
@@ -93,7 +96,7 @@ dict_Load_perturb = {
     'load': 'load_p5ulv58'
 }
 
-maindir = r"C:\Users\xfang\OneDrive\NREL_Projects\SAGA_Anthony\Austin"
+maindir = str(REPO_ROOT / '.local' / 'Austin')
 
 # Claim the DSS instance and event initialization
 Austin = DSS(dict_DSS, maindir)
@@ -136,7 +139,7 @@ opt_ed.options['threads'] = 8
 
 # ---- Data directory configuration
 # Main directory
-prefix_dir = r'C:\Users\xfang\gitrepos\Simulation_Generalization_Step_Two_Encapsulation_V5\data\18_bus'
+prefix_dir = str(REPO_ROOT / '.local' / '18_bus')
 
 # Branch directory
 rawData_fp = prefix_dir + "/ToGenerateUC&EDInput/"

@@ -9,6 +9,7 @@ import json
 import math
 import re
 import os
+from pathlib import Path
 import sys
 import time
 import numpy as np
@@ -27,14 +28,15 @@ mpl.rcParams['font.size'] = 16
 mpl.rcParams['legend.fontsize'] = 'large'
 
 ##################### First define a broker for total cosim ###########################
-path_to_TransmissionSim = os.getcwd()
-path_to_results = os.path.join(os.getcwd(), "..", "Results_figures")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+path_to_TransmissionSim = str(Path(__file__).resolve().parent)
+path_to_results = str(REPO_ROOT / 'Results_figures')
 
 
 
 ################# reading in config file ###########################################
 print("reading json")
-filename = "TransmissionSim.json"
+filename = Path(__file__).resolve().parent / 'TransmissionSim.json'
 with open(filename) as f:
     data = json.loads(f.read())
     federate_name = data["name"]
@@ -58,7 +60,7 @@ andes.main.config_logger(stream_level=20)
 #ss = andes.load(ieee14, setup=False, no_output=True)
 # this is to add fault
 #ss.add("Toggler", dict(model='SynGen', dev="GENROU_3", t=10.0))
-dir_to_tranmission_name = r"C:\Users\wwang2\Documents\OE\CPDS_setup\Network_models\Transmission\ieee39.xlsx"
+dir_to_tranmission_name = str(REPO_ROOT / 'Transmission' / 'network_model' / 'ieee39.xlsx')
 ss = andes.run(dir_to_tranmission_name, setup=True, no_output=True)
 
 #ss.setup()
