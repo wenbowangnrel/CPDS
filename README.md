@@ -2,8 +2,33 @@
 Cyber-Physical Dynamic System Modeling for Frequency Regulation and AGC Services of DES\
 
 
-PI: Xin Fang
+PI: Xin Fang\
 Contributor: Wenbo Wang
+
+### Reference paper
+
+If you use this framework in your research, please cite:
+
+W. Wang, X. Fang, H. Cui, F. Li, Y. Liu, and T. J. Overbye,
+"Transmission-and-Distribution Dynamic Co-Simulation Framework for Distributed
+Energy Resource Frequency Response," *IEEE Transactions on Smart Grid*,
+vol. 13, no. 1, pp. 482-495, January 2022.
+DOI: [10.1109/TSG.2021.3118292](https://doi.org/10.1109/TSG.2021.3118292).
+[IEEE Xplore](https://ieeexplore.ieee.org/abstract/document/9569771).
+
+```bibtex
+@article{wang2022tdcosimulation,
+  author  = {Wang, Wenbo and Fang, Xin and Cui, Hantao and Li, Fangxing and Liu, Yijing and Overbye, Thomas J.},
+  title   = {Transmission-and-Distribution Dynamic Co-Simulation Framework for Distributed Energy Resource Frequency Response},
+  journal = {IEEE Transactions on Smart Grid},
+  year    = {2022},
+  volume  = {13},
+  number  = {1},
+  pages   = {482--495},
+  month   = jan,
+  doi     = {10.1109/TSG.2021.3118292}
+}
+```
 
 ### Related repos
 CPDS_setup: https://github.nrel.gov/wwang2/CPDS_setup \
