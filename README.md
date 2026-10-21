@@ -131,5 +131,5 @@ were removed; the original environment has not been reproduced or validated.
 
 ### License
 
-This project is licensed under the Apache License, Version 2.0.
+This project is licensed under the BSD 3-Clause License.
 See [LICENSE](LICENSE) for details.
