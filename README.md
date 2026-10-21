@@ -128,3 +128,8 @@ ignored; review any data placed there before adding it to Git. Notebook outputs
 are cleared for sharing.
 The legacy requirements file contains unpinned packages where local build paths
 were removed; the original environment has not been reproduced or validated.
+
+### License
+
+This project is licensed under the Apache License, Version 2.0.
+See [LICENSE](LICENSE) for details.
